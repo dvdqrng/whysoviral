@@ -2,7 +2,8 @@ import "./globals.css"
 import { Inter } from "next/font/google"
 import Header from "./components/header"
 import { AuthProvider } from "@/lib/auth-context"
-import type React from "react" // Added import for React
+import { ThemeProvider } from "@/components/theme-provider"
+import type React from "react"
 
 const inter = Inter({ subsets: ["latin"] })
 
@@ -17,12 +18,19 @@ export default function RootLayout({
   children: React.ReactNode
 }) {
   return (
-    <html lang="en">
+    <html lang="en" suppressHydrationWarning>
       <body className={inter.className}>
-        <AuthProvider>
-          <Header />
-          <main className="container mx-auto px-4 py-8">{children}</main>
-        </AuthProvider>
+        <ThemeProvider
+          attribute="class"
+          defaultTheme="system"
+          enableSystem
+          disableTransitionOnChange
+        >
+          <AuthProvider>
+            <Header />
+            <main className="container mx-auto px-4 py-8">{children}</main>
+          </AuthProvider>
+        </ThemeProvider>
       </body>
     </html>
   )

@@ -5,7 +5,7 @@ export const runtime = "edge"
 export const dynamic = "force-dynamic"
 
 function extractUsername(url: string): string | null {
-  const match = url.match(/(?:@|tiktok\.com\/@)([\w.-]+)/)
+  const match = url.match(/(?:@|tiktok\.com\/@|tiktok\.com\/user\/)([^?\/]+)/)
   return match ? match[1] : null
 }
 
@@ -22,19 +22,26 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: "Invalid TikTok profile URL" }, { status: 400 })
     }
 
-    const data = await getTikTokUserPosts(username, cursor)
+    console.log("Fetching posts for username:", username, "with cursor:", cursor)
 
-    return NextResponse.json({
-      success: true,
-      data,
-      timestamp: new Date().toISOString(),
-    })
+    try {
+      const data = await getTikTokUserPosts(username, cursor)
+      return NextResponse.json({
+        success: true,
+        data,
+        timestamp: new Date().toISOString(),
+      })
+    } catch (error) {
+      console.error("Error in getTikTokUserPosts:", error)
+      throw error
+    }
   } catch (error) {
     console.error("Error fetching TikTok user posts:", error)
     return NextResponse.json(
       {
         success: false,
         error: error instanceof Error ? error.message : "Failed to fetch TikTok user posts",
+        details: error instanceof Error ? error.stack : undefined
       },
       { status: 500 },
     )
