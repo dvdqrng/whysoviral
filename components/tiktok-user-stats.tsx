@@ -1,228 +1,269 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useState } from 'react'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { Button } from "@/components/ui/button"
-import { Badge } from "@/components/ui/badge"
-import { Loader2, CheckCircle, Users, Heart, Video, Play, Share2, MessageCircle, Bookmark } from "lucide-react"
-import type { TikTokUserStats as TikTokUserStatsType, TikTokUserPost } from "@/lib/tiktok-service"
+import { Alert, AlertDescription } from "@/components/ui/alert"
+import { Skeleton } from "@/components/ui/skeleton"
 
-export function TikTokUserStats() {
-  const [profileUrl, setProfileUrl] = useState("")
-  const [loading, setLoading] = useState(false)
+export default function TikTokUserStats() {
+  const [userId, setUserId] = useState('')
+  const [isLoading, setIsLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
-  const [stats, setStats] = useState<TikTokUserStatsType | null>(null)
-  const [posts, setPosts] = useState<TikTokUserPost[]>([])
-  const [hasMore, setHasMore] = useState(true)
-  const [nextCursor, setNextCursor] = useState("0")
-  const [loadingPosts, setLoadingPosts] = useState(false)
+  const [profileData, setProfileData] = useState<any>(null)
+  const [postsData, setPostsData] = useState<any>(null)
 
-  const fetchStats = async () => {
-    setLoading(true)
+  const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault()
+    if (!userId.match(/^\d+$/)) {
+      setError('Please enter a valid numeric user ID')
+      return
+    }
+
+    setIsLoading(true)
     setError(null)
-    setPosts([])
-    setHasMore(true)
-    setNextCursor("0")
+    console.log('Fetching data for user ID:', userId)
 
     try {
-      const response = await fetch("/api/tiktok/user", {
-        method: "POST",
+      // Fetch user info
+      const userResponse = await fetch('/api/tiktok/user', {
+        method: 'POST',
         headers: {
-          "Content-Type": "application/json",
+          'Content-Type': 'application/json',
         },
-        body: JSON.stringify({ profileUrl }),
+        body: JSON.stringify({ profileUrl: userId }),
       })
 
-      const data = await response.json()
+      const userData = await userResponse.json()
+      console.log('User data response:', userData)
+      console.log('User data structure:', {
+        hasData: !!userData.data,
+        hasUser: !!userData.data?.user,
+        hasStats: !!userData.data?.user?.stats,
+        userFields: userData.data?.user ? Object.keys(userData.data.user) : [],
+        statsFields: userData.data?.user?.stats ? Object.keys(userData.data.user.stats) : []
+      })
 
-      if (!response.ok) {
-        throw new Error(data.error || "Failed to fetch user stats")
+      if (!userResponse.ok) {
+        throw new Error(userData.error || 'Failed to fetch user data')
+      }
+      setProfileData(userData)
+
+      // Fetch posts
+      const postsResponse = await fetch('/api/tiktok/user/posts', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          profileUrl: userId,
+          count: 10,
+          cursor: '0'
+        }),
+      })
+
+      const postsData = await postsResponse.json()
+      console.log('Posts data response:', postsData)
+      console.log('Posts data structure:', {
+        hasData: !!postsData.data,
+        hasVideos: !!postsData.data?.data?.videos,
+        videosLength: postsData.data?.data?.videos?.length,
+        firstVideo: postsData.data?.data?.videos?.[0] ? Object.keys(postsData.data.data.videos[0]) : [],
+        firstVideoSample: postsData.data?.data?.videos?.[0],
+        firstVideoStats: postsData.data?.data?.videos?.[0]?.statistics || postsData.data?.data?.videos?.[0]?.stats
+      })
+
+      if (!postsResponse.ok) {
+        throw new Error(postsData.error || 'Failed to fetch posts')
       }
 
-      setStats(data.data)
-      // After getting user stats, fetch their posts
-      fetchPosts()
-    } catch (err) {
-      setError(err instanceof Error ? err.message : "An error occurred")
+      // Ensure we only take the first 10 posts
+      const limitedPosts = {
+        ...postsData,
+        videos: postsData.data?.data?.videos?.slice(0, 10).map((video: any) => ({
+          ...video,
+          playCount: video.play_count || 0,
+          diggCount: video.digg_count || 0,
+          commentCount: video.comment_count || 0,
+          shareCount: video.share_count || 0,
+          createTime: video.create_time
+        })) || []
+      }
+      console.log('Setting posts data with mapped stats:', limitedPosts)
+      setPostsData(limitedPosts)
+    } catch (error) {
+      console.error('Error fetching data:', error)
+      setError(error instanceof Error ? error.message : 'An error occurred')
+      setProfileData(null)
+      setPostsData(null)
     } finally {
-      setLoading(false)
+      setIsLoading(false)
     }
   }
 
-  const fetchPosts = async () => {
-    if (loadingPosts || !hasMore) return
+  // Add debug logging for render conditions
+  console.log('Render state:', {
+    isLoading,
+    hasError: !!error,
+    hasProfileData: !!profileData?.data?.data?.user,
+    profileDataStructure: profileData ? {
+      hasData: !!profileData.data?.data,
+      hasUser: !!profileData.data?.data?.user,
+      hasStats: !!profileData.data?.data?.stats
+    } : null,
+    hasPostsData: !!postsData?.data?.data?.videos?.length,
+    postsDataStructure: postsData ? {
+      hasVideos: !!postsData.data?.data?.videos,
+      videosLength: postsData.data?.data?.videos?.length
+    } : null
+  })
 
-    setLoadingPosts(true)
-    try {
-      const response = await fetch("/api/tiktok/user/posts", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({ profileUrl, cursor: nextCursor }),
-      })
-
-      const data = await response.json()
-
-      if (!response.ok) {
-        throw new Error(data.error || "Failed to fetch user posts")
-      }
-
-      setPosts(prev => [...prev, ...data.data.posts])
-      setHasMore(data.data.hasMore)
-      setNextCursor(data.data.nextCursor)
-    } catch (err) {
-      setError(err instanceof Error ? err.message : "Failed to fetch posts")
-    } finally {
-      setLoadingPosts(false)
+  const formatNumber = (num: number) => {
+    if (!num) return '0'
+    if (num >= 1000000) {
+      return (num / 1000000).toFixed(1) + 'M'
     }
+    if (num >= 1000) {
+      return (num / 1000).toFixed(1) + 'K'
+    }
+    return num.toString()
   }
 
-  // Infinite scroll handler
-  useEffect(() => {
-    const handleScroll = () => {
-      if (
-        window.innerHeight + document.documentElement.scrollTop
-        === document.documentElement.offsetHeight
-      ) {
-        fetchPosts()
-      }
-    }
-
-    window.addEventListener('scroll', handleScroll)
-    return () => window.removeEventListener('scroll', handleScroll)
-  }, [nextCursor, hasMore, loadingPosts])
+  const formatDate = (timestamp: number) => {
+    if (!timestamp) return 'Unknown date'
+    return new Date(timestamp * 1000).toLocaleDateString()
+  }
 
   return (
-    <Card className="w-full max-w-4xl mx-auto">
-      <CardHeader>
-        <CardTitle>TikTok User Analysis</CardTitle>
-        <CardDescription>Enter a TikTok profile URL to analyze their stats and posts</CardDescription>
-      </CardHeader>
-      <CardContent>
-        <div className="space-y-8">
-          <div className="flex gap-4">
-            <Input
-              placeholder="https://www.tiktok.com/@username"
-              value={profileUrl}
-              onChange={(e) => setProfileUrl(e.target.value)}
-              disabled={loading}
-            />
-            <Button onClick={fetchStats} disabled={loading || !profileUrl}>
-              {loading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-              Analyze
-            </Button>
-          </div>
+    <div className="container mx-auto py-10 space-y-8">
+      <div className="space-y-4">
+        <h1 className="text-4xl font-bold">TikTok Profile Analytics</h1>
+        <form onSubmit={handleSubmit} className="flex gap-4">
+          <Input
+            placeholder="Enter TikTok User ID (e.g., 107955)"
+            value={userId}
+            onChange={(e) => setUserId(e.target.value)}
+            pattern="^\d+$"
+            className="max-w-md"
+            required
+          />
+          <Button type="submit" disabled={isLoading}>
+            {isLoading ? "Loading..." : "Fetch Stats"}
+          </Button>
+        </form>
 
-          {error && <div className="text-red-500 text-sm">{error}</div>}
+        {error && (
+          <Alert className="border-red-400">
+            <AlertDescription className="text-red-600">
+              {error}
+            </AlertDescription>
+          </Alert>
+        )}
+      </div>
 
-          {stats && (
-            <div className="space-y-8">
-              <div className="flex items-center gap-4">
-                {stats.avatar && (
+      {isLoading && (
+        <div className="space-y-4">
+          <Skeleton className="h-48 w-full" />
+          <Skeleton className="h-96 w-full" />
+        </div>
+      )}
+
+      {!isLoading && profileData?.data?.data?.user && (
+        <>
+          {/* Profile Card */}
+          <Card>
+            <CardHeader>
+              <div className="flex items-start gap-4">
+                {profileData.data.data.user.avatarThumb && (
                   <img
-                    src={stats.avatar || "/placeholder.svg"}
-                    alt={stats.nickname}
-                    className="w-20 h-20 rounded-full"
+                    src={profileData.data.data.user.avatarThumb}
+                    alt={profileData.data.data.user.nickname}
+                    className="w-24 h-24 rounded-full"
                   />
                 )}
                 <div>
-                  <h3 className="text-xl font-bold flex items-center gap-2">
-                    {stats.nickname}
-                    {stats.verified && <CheckCircle className="h-5 w-5 text-blue-500" />}
-                  </h3>
-                  <p className="text-sm text-muted-foreground">@{stats.username}</p>
-                  {stats.category && <Badge variant="secondary">{stats.category}</Badge>}
+                  <CardTitle className="text-2xl">{profileData.data.data.user.nickname}</CardTitle>
+                  <p className="text-muted-foreground">@{profileData.data.data.user.uniqueId}</p>
+                  {profileData.data.data.user.signature && (
+                    <p className="mt-2">{profileData.data.data.user.signature}</p>
+                  )}
                 </div>
               </div>
-
-              <div className="grid grid-cols-3 gap-4">
-                <div className="text-center p-4 bg-muted rounded-lg">
-                  <Users className="h-5 w-5 mx-auto mb-2" />
-                  <div className="text-2xl font-bold">{stats.followers}</div>
-                  <div className="text-sm text-muted-foreground">Followers</div>
-                </div>
-                <div className="text-center p-4 bg-muted rounded-lg">
-                  <Heart className="h-5 w-5 mx-auto mb-2" />
-                  <div className="text-2xl font-bold">{stats.likes}</div>
-                  <div className="text-sm text-muted-foreground">Likes</div>
-                </div>
-                <div className="text-center p-4 bg-muted rounded-lg">
-                  <Video className="h-5 w-5 mx-auto mb-2" />
-                  <div className="text-2xl font-bold">{stats.videos}</div>
-                  <div className="text-sm text-muted-foreground">Videos</div>
-                </div>
-              </div>
-
-              {stats.bio && (
+            </CardHeader>
+            <CardContent>
+              <div className="grid grid-cols-4 gap-4 text-center">
                 <div>
-                  <h4 className="font-semibold mb-2">Bio</h4>
-                  <p className="text-sm">{stats.bio}</p>
+                  <p className="text-2xl font-bold">{formatNumber(profileData.data.data.stats.followerCount)}</p>
+                  <p className="text-muted-foreground">Followers</p>
                 </div>
-              )}
+                <div>
+                  <p className="text-2xl font-bold">{formatNumber(profileData.data.data.stats.followingCount)}</p>
+                  <p className="text-muted-foreground">Following</p>
+                </div>
+                <div>
+                  <p className="text-2xl font-bold">{formatNumber(profileData.data.data.stats.heart)}</p>
+                  <p className="text-muted-foreground">Likes</p>
+                </div>
+                <div>
+                  <p className="text-2xl font-bold">{formatNumber(profileData.data.data.stats.videoCount)}</p>
+                  <p className="text-muted-foreground">Videos</p>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
 
-              <div>
-                <h4 className="font-semibold mb-4">Posts</h4>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                  {posts.map((post) => (
-                    <Card key={post.id} className="overflow-hidden">
-                      {post.video.coverUrl && (
-                        <div className="relative aspect-video">
-                          <img
-                            src={post.video.coverUrl}
-                            alt={post.desc}
-                            className="w-full h-full object-cover"
-                          />
-                        </div>
+          {/* Recent Posts */}
+          {postsData?.data?.data?.videos?.length > 0 && (
+            <Card>
+              <CardHeader>
+                <CardTitle>Recent Posts</CardTitle>
+                <CardDescription>Latest {postsData.data.data.videos.length} TikTok videos and their performance</CardDescription>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-4">
+                  {postsData.data.data.videos.map((post: any) => (
+                    <div key={post.video_id || post.id} className="flex gap-4 p-4 border rounded-lg">
+                      {post.cover && (
+                        <img
+                          src={post.cover}
+                          alt={post.title || 'Video thumbnail'}
+                          className="w-32 h-32 object-cover rounded"
+                        />
                       )}
-                      <CardContent className="p-4">
-                        <p className="text-sm mb-2 line-clamp-2">{post.desc || "No description"}</p>
-                        <div className="text-xs text-muted-foreground mb-3">
-                          Posted on {new Date(post.createTime).toLocaleDateString()}
-                        </div>
-                        <div className="grid grid-cols-5 gap-2 text-center">
+                      <div className="flex-1">
+                        <p className="font-medium line-clamp-2">{post.title || post.desc || 'No description'}</p>
+                        <p className="text-sm text-muted-foreground mb-2">
+                          Posted on {formatDate(post.create_time)}
+                        </p>
+                        <div className="grid grid-cols-4 gap-4">
                           <div>
-                            <Play className="h-4 w-4 mx-auto mb-1" />
-                            <div className="text-xs">{post.stats.plays.toLocaleString()}</div>
+                            <p className="font-bold">{formatNumber(post.play_count || 0)}</p>
+                            <p className="text-sm text-muted-foreground">Views</p>
                           </div>
                           <div>
-                            <Heart className="h-4 w-4 mx-auto mb-1" />
-                            <div className="text-xs">{post.stats.likes.toLocaleString()}</div>
+                            <p className="font-bold">{formatNumber(post.digg_count || 0)}</p>
+                            <p className="text-sm text-muted-foreground">Likes</p>
                           </div>
                           <div>
-                            <Share2 className="h-4 w-4 mx-auto mb-1" />
-                            <div className="text-xs">{post.stats.shares.toLocaleString()}</div>
+                            <p className="font-bold">{formatNumber(post.comment_count || 0)}</p>
+                            <p className="text-sm text-muted-foreground">Comments</p>
                           </div>
                           <div>
-                            <MessageCircle className="h-4 w-4 mx-auto mb-1" />
-                            <div className="text-xs">{post.stats.comments.toLocaleString()}</div>
-                          </div>
-                          <div>
-                            <Bookmark className="h-4 w-4 mx-auto mb-1" />
-                            <div className="text-xs">{post.stats.bookmarks.toLocaleString()}</div>
+                            <p className="font-bold">{formatNumber(post.share_count || 0)}</p>
+                            <p className="text-sm text-muted-foreground">Shares</p>
                           </div>
                         </div>
-                      </CardContent>
-                    </Card>
+                      </div>
+                    </div>
                   ))}
                 </div>
-                {loadingPosts && (
-                  <div className="text-center py-4">
-                    <Loader2 className="h-6 w-6 animate-spin mx-auto" />
-                  </div>
-                )}
-                {!hasMore && posts.length > 0 && (
-                  <div className="text-center py-4 text-muted-foreground">
-                    No more posts to load
-                  </div>
-                )}
-              </div>
-            </div>
+              </CardContent>
+            </Card>
           )}
-        </div>
-      </CardContent>
-    </Card>
+        </>
+      )}
+    </div>
   )
 }
 
