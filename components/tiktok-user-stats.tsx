@@ -463,7 +463,7 @@ export default function TikTokUserStats() {
 
             {/* Profile Card */}
             {activeTab !== 'all' && activeTab !== 'add' && profiles[activeTab] && (
-              <div className="max-w-full space-y-2">
+              <div className="max-w-full space-y-6">
                 <div className="flex justify-end pr-2">
                   <p className="text-sm text-muted-foreground">
                     Trends for the past <span className="text-foreground font-medium">10 weeks</span>
@@ -608,7 +608,7 @@ export default function TikTokUserStats() {
 
                 {/* Recent Posts */}
                 {profiles[activeTab].postsData?.data?.data?.videos?.length > 0 && (
-                  <div>
+                  <div className="mt-6">
                     <h2 className="text-base font-medium mb-4">Recent Posts</h2>
                     <div className="space-y-3">
                       {profiles[activeTab].postsData.data.data.videos.map((post: any) => (
