@@ -311,13 +311,39 @@ export async function trackUserSearch(userId: string, searchedByUid: string) {
       })
 
     if (error) {
-      console.error('Error tracking user search:', error)
+      // Check for "relation does not exist" error
+      if (error.code === '42P01') {
+        console.error('Error: The tiktok_user_searches table does not exist. Please ensure all migrations have been run.')
+        // You may want to disable tracking silently in this case
+        return
+      }
+
+      // Check for foreign key violation
+      if (error.code === '23503') {
+        console.error('Error: Referenced user_id does not exist in tiktok_users table')
+        return
+      }
+
+      console.error('Error tracking user search:', {
+        message: error.message,
+        code: error.code,
+        details: error.details
+      })
       throw error
     }
 
     console.log('Successfully tracked user search')
   } catch (error) {
-    console.error('Error tracking user search:', error)
-    throw error
+    if (error instanceof Error) {
+      console.error('Error tracking user search:', {
+        name: error.name,
+        message: error.message,
+        stack: error.stack
+      })
+    } else {
+      console.error('Unknown error tracking user search:', error)
+    }
+    // Don't throw the error since this is a non-critical tracking function
+    // Just log it and continue
   }
 } 

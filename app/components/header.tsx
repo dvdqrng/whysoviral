@@ -5,6 +5,8 @@ import { useAuth } from "@/lib/auth-context"
 import { Button } from "@/components/ui/button"
 import { supabase } from "@/lib/supabase"
 import { useRouter } from "next/navigation"
+import { ThemeSwitcher } from "@/components/theme-switcher"
+import { MainNav } from "./nav"
 
 export default function Header() {
   const { user, loading } = useAuth()
@@ -17,47 +19,34 @@ export default function Header() {
   }
 
   return (
-    <header className="bg-gray-800 text-white">
-      <nav className="container mx-auto px-4 py-4">
-        <div className="flex justify-between items-center">
-          <ul className="flex space-x-4">
-            <li>
-              <Link href="/" className="hover:text-gray-300">
-                Home
-              </Link>
-            </li>
-            {user && (
-              <>
-                <li>
-                  <Link href="/tier1" className="hover:text-gray-300">
-                    Single Video Analysis
-                  </Link>
-                </li>
-                <li>
-                  <Link href="/tier2" className="hover:text-gray-300">
-                    Account Analysis
-                  </Link>
-                </li>
-              </>
-            )}
-          </ul>
-          <div>
-            {!loading &&
-              (user ? (
-                <div className="flex items-center space-x-4">
-                  <span>{user.email}</span>
-                  <Button variant="outline" onClick={handleSignOut}>
-                    Sign Out
-                  </Button>
-                </div>
+    <header className="w-full border-b">
+      <div className="flex h-14 items-center justify-between px-4">
+        <div className="flex items-center">
+          <Link href="/" className="flex items-center">
+            <span className="text-sm font-medium">WSV</span>
+          </Link>
+          <MainNav />
+        </div>
+
+        <div className="flex items-center gap-2">
+          <ThemeSwitcher />
+          {!loading && (
+            <>
+              {user ? (
+                <Button variant="ghost" onClick={handleSignOut} size="sm">
+                  Sign Out
+                </Button>
               ) : (
                 <Link href="/auth/login">
-                  <Button variant="outline">Sign In</Button>
+                  <Button variant="outline" size="sm" className="font-medium">
+                    Signup
+                  </Button>
                 </Link>
-              ))}
-          </div>
+              )}
+            </>
+          )}
         </div>
-      </nav>
+      </div>
     </header>
   )
 }

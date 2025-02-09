@@ -1,11 +1,16 @@
 import { NextResponse } from "next/server"
 import { getUserInfo, extractUserId, extractUsername, resolveUsername } from "@/lib/tiktok-scraper-service"
 import { upsertTikTokUser, trackUserSearch } from "@/lib/db/supabase"
+import { supabase } from "@/lib/supabase"
 
 export const dynamic = "force-dynamic"
 
 export async function POST(req: Request) {
   try {
+    // Get the authenticated user's session
+    const { data: { session } } = await supabase.auth.getSession()
+    const authenticatedUid = session?.user?.id
+
     const { profileUrl } = await req.json()
     console.log('Received request for profile:', profileUrl)
 
@@ -14,7 +19,6 @@ export async function POST(req: Request) {
     }
 
     let userId = profileUrl
-    let searchedByUid = profileUrl // Store the original search input
 
     // If it's not already a numeric ID, try to resolve it
     if (!extractUserId(profileUrl)) {
@@ -52,12 +56,12 @@ export async function POST(req: Request) {
       profile_url: `https://www.tiktok.com/@${apiResponse.data.user.uniqueId}`
     }
 
-    // Only pass searchedByUid if it's a numeric ID
-    await upsertTikTokUser(userData, extractUserId(searchedByUid) ? searchedByUid : undefined)
+    // Store the TikTok user data
+    await upsertTikTokUser(userData)
 
-    // Track the search
-    if (extractUserId(searchedByUid)) {
-      await trackUserSearch(userData.user_id, searchedByUid)
+    // Track the search only if we have an authenticated user
+    if (authenticatedUid) {
+      await trackUserSearch(userData.user_id, authenticatedUid)
     }
 
     // Transform the response to match expected structure

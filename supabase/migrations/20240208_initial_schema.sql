@@ -23,7 +23,8 @@ CREATE TABLE IF NOT EXISTS public.tiktok_users (
 -- Create tiktok_posts table
 CREATE TABLE IF NOT EXISTS public.tiktok_posts (
   id TEXT PRIMARY KEY,
-  username TEXT REFERENCES tiktok_users(username),
+  user_id TEXT REFERENCES tiktok_users(user_id),
+  username TEXT,
   description TEXT,
   created_at TIMESTAMP WITH TIME ZONE,
   plays INTEGER,

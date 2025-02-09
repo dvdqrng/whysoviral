@@ -8,8 +8,8 @@ import type React from "react"
 const inter = Inter({ subsets: ["latin"] })
 
 export const metadata = {
-  title: "TikTok AI Analysis",
-  description: "AI-powered TikTok video analysis for content creators",
+  title: "Why So Viral - TikTok Analytics",
+  description: "AI-powered insights to make your TikTok content go viral",
 }
 
 export default function RootLayout({

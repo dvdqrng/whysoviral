@@ -104,4 +104,57 @@ CREATE INDEX IF NOT EXISTS idx_tiktok_posts_created_at ON public.tiktok_posts(cr
 CREATE INDEX IF NOT EXISTS idx_tiktok_users_last_updated ON public.tiktok_users(last_updated DESC);
 CREATE INDEX IF NOT EXISTS idx_tiktok_users_user_id ON public.tiktok_users(user_id);
 CREATE INDEX IF NOT EXISTS idx_tiktok_user_searches_user_id ON public.tiktok_user_searches(user_id);
-CREATE INDEX IF NOT EXISTS idx_tiktok_user_searches_searched_by_uid ON public.tiktok_user_searches(searched_by_uid); 
+CREATE INDEX IF NOT EXISTS idx_tiktok_user_searches_searched_by_uid ON public.tiktok_user_searches(searched_by_uid);
+
+-- Create users table
+CREATE TABLE users (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    username TEXT UNIQUE NOT NULL,
+    nickname TEXT,
+    avatar_url TEXT,
+    bio TEXT,
+    follower_count INTEGER,
+    following_count INTEGER,
+    likes_count INTEGER,
+    video_count INTEGER,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+    updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+    -- New analytics columns
+    avg_views_per_post FLOAT,
+    avg_time_between_posts FLOAT, -- in hours
+    weekly_post_frequency JSON, -- Store weekly post counts as JSON
+    views_trend JSON, -- Store historical view counts as JSON
+    last_analytics_update TIMESTAMP WITH TIME ZONE
+);
+
+-- Create posts table
+CREATE TABLE posts (
+    id TEXT PRIMARY KEY,
+    user_id UUID REFERENCES users(id),
+    description TEXT,
+    video_url TEXT,
+    video_cover_url TEXT,
+    plays INTEGER DEFAULT 0,
+    likes INTEGER DEFAULT 0,
+    comments INTEGER DEFAULT 0,
+    shares INTEGER DEFAULT 0,
+    created_at TIMESTAMP WITH TIME ZONE,
+    fetched_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+    -- New analytics columns
+    view_velocity FLOAT, -- Rate of view growth
+    engagement_rate FLOAT -- (likes + comments + shares) / views
+);
+
+-- Add trigger to update users.updated_at
+CREATE OR REPLACE FUNCTION update_updated_at_column()
+RETURNS TRIGGER AS $$
+BEGIN
+    NEW.updated_at = NOW();
+    RETURN NEW;
+END;
+$$ language 'plpgsql';
+
+CREATE TRIGGER update_users_updated_at
+    BEFORE UPDATE ON users
+    FOR EACH ROW
+    EXECUTE FUNCTION update_updated_at_column(); 

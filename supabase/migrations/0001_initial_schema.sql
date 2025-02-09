@@ -36,7 +36,8 @@ create table if not exists public.tiktok_users (
 -- TikTok posts/videos
 create table if not exists public.tiktok_posts (
   id text primary key,
-  username text references tiktok_users(username),
+  user_id text references tiktok_users(user_id),
+  username text,
   description text,
   created_at timestamp with time zone,
   plays integer,
