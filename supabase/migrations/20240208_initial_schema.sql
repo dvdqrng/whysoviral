@@ -1,6 +1,7 @@
 -- Create tiktok_users table
 CREATE TABLE IF NOT EXISTS public.tiktok_users (
-  username TEXT PRIMARY KEY,
+  user_id TEXT NOT NULL,
+  username TEXT NOT NULL,
   nickname TEXT,
   followers INTEGER,
   following INTEGER,
@@ -10,7 +11,13 @@ CREATE TABLE IF NOT EXISTS public.tiktok_users (
   bio TEXT,
   category TEXT,
   avatar TEXT,
-  last_updated TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
+  profile_url TEXT,
+  profile_deep_link TEXT,
+  region TEXT,
+  is_private BOOLEAN DEFAULT false,
+  last_updated TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+  PRIMARY KEY (user_id),
+  UNIQUE (username)
 );
 
 -- Create tiktok_posts table
@@ -31,6 +38,13 @@ CREATE TABLE IF NOT EXISTS public.tiktok_posts (
   music_title TEXT,
   music_author TEXT,
   music_is_original BOOLEAN,
+  music_duration INTEGER,
+  music_play_url TEXT,
+  is_pinned BOOLEAN DEFAULT false,
+  is_ad BOOLEAN DEFAULT false,
+  region TEXT,
+  hashtags JSONB DEFAULT '[]',
+  mentions JSONB DEFAULT '[]',
   last_updated TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
 );
 
@@ -54,4 +68,5 @@ CREATE POLICY "Allow public read access to tiktok_posts"
 -- Create indexes for better performance
 CREATE INDEX IF NOT EXISTS idx_tiktok_posts_username ON public.tiktok_posts(username);
 CREATE INDEX IF NOT EXISTS idx_tiktok_posts_created_at ON public.tiktok_posts(created_at DESC);
-CREATE INDEX IF NOT EXISTS idx_tiktok_users_last_updated ON public.tiktok_users(last_updated DESC); 
+CREATE INDEX IF NOT EXISTS idx_tiktok_users_last_updated ON public.tiktok_users(last_updated DESC);
+CREATE INDEX IF NOT EXISTS idx_tiktok_users_user_id ON public.tiktok_users(user_id); 

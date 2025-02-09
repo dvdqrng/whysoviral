@@ -8,7 +8,7 @@ import { Alert, AlertDescription } from "@/components/ui/alert"
 import { Skeleton } from "@/components/ui/skeleton"
 
 export default function TikTokUserStats() {
-  const [userId, setUserId] = useState('')
+  const [input, setInput] = useState('')
   const [isLoading, setIsLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [profileData, setProfileData] = useState<any>(null)
@@ -16,82 +16,87 @@ export default function TikTokUserStats() {
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault()
-    if (!userId.match(/^\d+$/)) {
-      setError('Please enter a valid numeric user ID')
+    if (!input.trim()) {
+      setError('Please enter a TikTok username or user ID')
       return
     }
 
     setIsLoading(true)
     setError(null)
-    console.log('Fetching data for user ID:', userId)
+    console.log('Fetching data for input:', input)
 
     try {
       // Fetch user info
+      console.log('Making user info request to:', '/api/tiktok/user')
       const userResponse = await fetch('/api/tiktok/user', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({ profileUrl: userId }),
+        body: JSON.stringify({ profileUrl: input }),
       })
 
-      const userData = await userResponse.json()
-      console.log('User data response:', userData)
-      console.log('User data structure:', {
-        hasData: !!userData.data,
-        hasUser: !!userData.data?.user,
-        hasStats: !!userData.data?.user?.stats,
-        userFields: userData.data?.user ? Object.keys(userData.data.user) : [],
-        statsFields: userData.data?.user?.stats ? Object.keys(userData.data.user.stats) : []
-      })
+      console.log('User response status:', userResponse.status)
+      const responseText = await userResponse.text()
+      console.log('Raw response:', responseText)
+
+      let userData
+      try {
+        userData = JSON.parse(responseText)
+        console.log('Parsed user data:', userData)
+      } catch (parseError) {
+        console.error('Failed to parse user response:', parseError)
+        throw new Error('Invalid response format from server')
+      }
 
       if (!userResponse.ok) {
         throw new Error(userData.error || 'Failed to fetch user data')
       }
+
+      console.log('User data structure:', {
+        hasData: !!userData.data,
+        hasUser: !!userData.data?.data?.user,
+        hasStats: !!userData.data?.data?.user?.stats,
+        userFields: userData.data?.data?.user ? Object.keys(userData.data.data.user) : [],
+        statsFields: userData.data?.data?.user?.stats ? Object.keys(userData.data.data.user.stats) : []
+      })
+
       setProfileData(userData)
 
       // Fetch posts
+      console.log('Making posts request to:', '/api/tiktok/user/posts')
       const postsResponse = await fetch('/api/tiktok/user/posts', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          profileUrl: userId,
+          profileUrl: input,
           count: 10,
           cursor: '0'
         }),
       })
 
-      const postsData = await postsResponse.json()
-      console.log('Posts data response:', postsData)
-      console.log('Posts data structure:', {
-        hasData: !!postsData.data,
-        hasVideos: !!postsData.data?.data?.videos,
-        videosLength: postsData.data?.data?.videos?.length,
-        firstVideo: postsData.data?.data?.videos?.[0] ? Object.keys(postsData.data.data.videos[0]) : [],
-        firstVideoSample: postsData.data?.data?.videos?.[0],
-        firstVideoStats: postsData.data?.data?.videos?.[0]?.statistics || postsData.data?.data?.videos?.[0]?.stats
-      })
-
       if (!postsResponse.ok) {
-        throw new Error(postsData.error || 'Failed to fetch posts')
+        const errorData = await postsResponse.json()
+        throw new Error(errorData.error || 'Failed to fetch posts')
       }
 
-      // Ensure we only take the first 10 posts
-      const limitedPosts = {
-        ...postsData,
-        videos: postsData.data?.data?.videos?.slice(0, 10).map((video: any) => ({
-          ...video,
-          playCount: video.play_count || 0,
-          diggCount: video.digg_count || 0,
-          commentCount: video.comment_count || 0,
-          shareCount: video.share_count || 0,
-          createTime: video.create_time
-        })) || []
+      // Wait a moment for the posts to be stored in Supabase
+      await new Promise(resolve => setTimeout(resolve, 1000))
+
+      // Fetch the stored posts from Supabase
+      const username = userData.data.data.user.uniqueId
+      const supabasePostsResponse = await fetch(`/api/tiktok/posts/${username}`)
+
+      if (!supabasePostsResponse.ok) {
+        const errorData = await supabasePostsResponse.json()
+        throw new Error(errorData.error || 'Failed to fetch stored posts')
       }
-      console.log('Setting posts data with mapped stats:', limitedPosts)
-      setPostsData(limitedPosts)
+
+      const supabasePosts = await supabasePostsResponse.json()
+      setPostsData({ data: { data: { videos: supabasePosts.data } } })
+
     } catch (error) {
       console.error('Error fetching data:', error)
       setError(error instanceof Error ? error.message : 'An error occurred')
@@ -130,9 +135,10 @@ export default function TikTokUserStats() {
     return num.toString()
   }
 
-  const formatDate = (timestamp: number) => {
-    if (!timestamp) return 'Unknown date'
-    return new Date(timestamp * 1000).toLocaleDateString()
+  const formatDate = (date: string | number) => {
+    if (!date) return 'Unknown date'
+    const dateObj = typeof date === 'number' ? new Date(date * 1000) : new Date(date)
+    return dateObj.toLocaleDateString()
   }
 
   return (
@@ -141,10 +147,9 @@ export default function TikTokUserStats() {
         <h1 className="text-4xl font-bold">TikTok Profile Analytics</h1>
         <form onSubmit={handleSubmit} className="flex gap-4">
           <Input
-            placeholder="Enter TikTok User ID (e.g., 107955)"
-            value={userId}
-            onChange={(e) => setUserId(e.target.value)}
-            pattern="^\d+$"
+            placeholder="Enter TikTok username or user ID (e.g., @username or 107955)"
+            value={input}
+            onChange={(e) => setInput(e.target.value)}
             className="max-w-md"
             required
           />
@@ -223,34 +228,34 @@ export default function TikTokUserStats() {
               <CardContent>
                 <div className="space-y-4">
                   {postsData.data.data.videos.map((post: any) => (
-                    <div key={post.video_id || post.id} className="flex gap-4 p-4 border rounded-lg">
-                      {post.cover && (
+                    <div key={post.id} className="flex gap-4 p-4 border rounded-lg">
+                      {post.video_cover_url && (
                         <img
-                          src={post.cover}
-                          alt={post.title || 'Video thumbnail'}
+                          src={post.video_cover_url}
+                          alt={post.description || 'Video thumbnail'}
                           className="w-32 h-32 object-cover rounded"
                         />
                       )}
                       <div className="flex-1">
-                        <p className="font-medium line-clamp-2">{post.title || post.desc || 'No description'}</p>
+                        <p className="font-medium line-clamp-2">{post.description || 'No description'}</p>
                         <p className="text-sm text-muted-foreground mb-2">
-                          Posted on {formatDate(post.create_time)}
+                          Posted on {formatDate(post.created_at)}
                         </p>
                         <div className="grid grid-cols-4 gap-4">
                           <div>
-                            <p className="font-bold">{formatNumber(post.play_count || 0)}</p>
+                            <p className="font-bold">{formatNumber(post.plays || 0)}</p>
                             <p className="text-sm text-muted-foreground">Views</p>
                           </div>
                           <div>
-                            <p className="font-bold">{formatNumber(post.digg_count || 0)}</p>
+                            <p className="font-bold">{formatNumber(post.likes || 0)}</p>
                             <p className="text-sm text-muted-foreground">Likes</p>
                           </div>
                           <div>
-                            <p className="font-bold">{formatNumber(post.comment_count || 0)}</p>
+                            <p className="font-bold">{formatNumber(post.comments || 0)}</p>
                             <p className="text-sm text-muted-foreground">Comments</p>
                           </div>
                           <div>
-                            <p className="font-bold">{formatNumber(post.share_count || 0)}</p>
+                            <p className="font-bold">{formatNumber(post.shares || 0)}</p>
                             <p className="text-sm text-muted-foreground">Shares</p>
                           </div>
                         </div>
