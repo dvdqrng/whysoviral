@@ -1,9 +1,8 @@
-import { Configuration, OpenAIApi } from "openai"
+import OpenAI from "openai"
 
-const configuration = new Configuration({
+const openai = new OpenAI({
   apiKey: process.env.OPENAI_API_KEY,
 })
-const openai = new OpenAIApi(configuration)
 
 export async function generateInsights(analysisData: any) {
   const prompt = `
@@ -22,7 +21,7 @@ export async function generateInsights(analysisData: any) {
     4. What recommendations would you make to improve engagement?
   `
 
-  const response = await openai.createCompletion({
+  const response = await openai.completions.create({
     model: "text-davinci-002",
     prompt: prompt,
     max_tokens: 500,
