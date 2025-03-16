@@ -14,7 +14,7 @@ import { createClient } from '@/lib/supabase-browser'
 
 export default function TeamsPageDirect() {
   const [user, setUser] = useState<any>(null)
-  const [teams, setTeams] = useState([])
+  const [teams, setTeams] = useState<any[]>([])
   const [loading, setLoading] = useState(true)
   const [authLoading, setAuthLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
