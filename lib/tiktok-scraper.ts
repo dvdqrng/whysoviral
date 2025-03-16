@@ -37,7 +37,7 @@ export async function getTikTokMetrics(url: string): Promise<TikTokMetrics> {
     }
   } catch (error) {
     console.error("Error fetching TikTok data:", error)
-    throw new Error(`Failed to fetch TikTok data: ${error.message}`)
+    throw new Error(`Failed to fetch TikTok data: ${error instanceof Error ? error.message : String(error)}`)
   }
 }
 
