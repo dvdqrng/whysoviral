@@ -27,6 +27,6 @@ export async function generateInsights(analysisData: any) {
     max_tokens: 500,
   })
 
-  return response.data.choices[0].text
+  return response.choices[0].text
 }
 
