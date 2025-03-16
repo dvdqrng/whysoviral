@@ -99,7 +99,7 @@ export default function TeamPageDirect({ params }: { params: { team_id: string }
           return
         }
 
-        setTeam(teamData)
+        setTeam(teamData as Team)
 
         // Fetch team members
         const { data: membersData, error: membersError } = await supabase
