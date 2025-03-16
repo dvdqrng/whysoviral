@@ -88,10 +88,10 @@ export default function TeamsPageDirect() {
 
         // Format teams data
         const formattedTeams = teamMembers.map(member => ({
-          id: member.teams.id,
-          name: member.teams.name,
-          description: member.teams.description,
-          created_at: member.teams.created_at,
+          id: (member.teams as any).id,
+          name: (member.teams as any).name,
+          description: (member.teams as any).description,
+          created_at: (member.teams as any).created_at,
           role: member.role
         }))
 
