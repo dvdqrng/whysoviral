@@ -62,7 +62,7 @@ export async function GET(request: Request) {
       const { data: policies, error: policiesError } = await supabaseAdmin.rpc('get_policies')
       
       // Debug RLS policies specifically for team_members
-      const teamMembersPolicies = policies?.filter(p => 
+      const teamMembersPolicies = policies?.filter((p: any) => 
         p.tablename === 'team_members' || p.tablename === 'teams'
       ) || []
       
