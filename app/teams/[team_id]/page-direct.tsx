@@ -123,7 +123,7 @@ export default function TeamPageDirect({ params }: { params: { team_id: string }
           // Transform the data to include email from the users relation
           const transformedMembers = membersData.map(member => ({
             ...member,
-            email: member.users?.email || 'Unknown email'
+            email: (member.users as any)?.email || 'Unknown email'
           }))
           console.log('Transformed members:', transformedMembers)
           setMembers(transformedMembers || [])
