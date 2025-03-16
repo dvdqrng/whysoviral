@@ -25,7 +25,7 @@ export default function AuthTestPage() {
         console.error('Error checking client auth:', err)
         setClientAuth({
           authenticated: false,
-          error: err.message,
+          error: err instanceof Error ? err.message : String(err),
           user: null
         })
       } finally {
