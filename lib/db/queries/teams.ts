@@ -65,7 +65,7 @@ export async function getUserTeams(userId: string): Promise<Team[]> {
   }
 
   // Transform the response to get teams directly
-  return data.map(item => item.team) as Team[]
+  return data.map(item => item.team) as unknown as Team[]
 }
 
 // Update a team
