@@ -1,0 +1,43 @@
+# Styles
+
+This file contains cursor rules for styling-related code in the application.
+
+## Global Styles
+
+```json
+{
+  "description": "Global Styles",
+  "pattern": "styles/globals.css",
+  "context": "Global CSS styles for the application. Contains base styles, resets, and utility classes."
+}
+```
+
+## Component Styles
+
+```json
+{
+  "description": "Component Styles",
+  "pattern": "styles/components/*.css",
+  "context": "Component-specific styles for custom components not using Tailwind utility classes."
+}
+```
+
+## Theme Styles
+
+```json
+{
+  "description": "Theme Configuration",
+  "pattern": "styles/theme.ts",
+  "context": "Theme configuration and variables used throughout the application."
+}
+```
+
+## Animation Styles
+
+```json
+{
+  "description": "Animation Styles",
+  "pattern": "styles/animations.css",
+  "context": "CSS animations and transitions used throughout the application."
+}
+``` 

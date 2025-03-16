@@ -1,0 +1,43 @@
+# Assets
+
+This file contains cursor rules for public assets and static files in the application.
+
+## Images
+
+```json
+{
+  "description": "Public Images",
+  "pattern": "public/images/**",
+  "context": "Static image assets used in the application. Includes logos, illustrations, and UI elements."
+}
+```
+
+## Icons
+
+```json
+{
+  "description": "Icon Assets",
+  "pattern": "public/icons/**",
+  "context": "Icon assets used in the application UI. May include SVG, PNG, or other icon formats."
+}
+```
+
+## Fonts
+
+```json
+{
+  "description": "Font Assets",
+  "pattern": "public/fonts/**",
+  "context": "Font files used for typography in the application."
+}
+```
+
+## Static Files
+
+```json
+{
+  "description": "Static Files",
+  "pattern": "public/**",
+  "context": "Static files served directly from the root path. Includes favicon, robots.txt, and manifest files."
+}
+``` 

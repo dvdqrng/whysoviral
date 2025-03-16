@@ -1,0 +1,117 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Teams API Test</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      line-height: 1.6;
+      max-width: 800px;
+      margin: 0 auto;
+      padding: 20px;
+    }
+
+    button {
+      padding: 8px 16px;
+      margin-right: 10px;
+      margin-bottom: 10px;
+      cursor: pointer;
+    }
+
+    pre {
+      background-color: #f5f5f5;
+      padding: 15px;
+      border-radius: 5px;
+      overflow-x: auto;
+    }
+
+    .input-group {
+      margin-bottom: 15px;
+    }
+
+    input,
+    textarea {
+      padding: 8px;
+      width: 100%;
+      margin-top: 5px;
+    }
+  </style>
+</head>
+
+<body>
+  <h1>Teams API Test</h1>
+
+  <div>
+    <h2>Create Team</h2>
+    <div class="input-group">
+      <label for="team-name">Team Name:</label>
+      <input type="text" id="team-name" value="Test Team">
+    </div>
+
+    <div class="input-group">
+      <label for="team-description">Description:</label>
+      <textarea id="team-description">A test team created after fixing RLS policies</textarea>
+    </div>
+
+    <button onclick="createTeam()">Create Team</button>
+  </div>
+
+  <div>
+    <h2>List Teams</h2>
+    <button onclick="getTeams()">Get Teams</button>
+  </div>
+
+  <h2>Response:</h2>
+  <pre id="response">Results will appear here...</pre>
+
+  <script>
+    async function createTeam() {
+      try {
+        const response = await fetch('/api/teams', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({
+            name: document.getElementById('team-name').value,
+            description: document.getElementById('team-description').value
+          })
+        });
+
+        const data = await response.json();
+        document.getElementById('response').textContent = JSON.stringify(data, null, 2);
+
+        if (response.ok) {
+          console.log("Team created successfully:", data);
+        } else {
+          console.error("Error creating team:", data);
+        }
+      } catch (error) {
+        document.getElementById('response').textContent = `Error: ${error.message}`;
+        console.error("Error:", error);
+      }
+    }
+
+    async function getTeams() {
+      try {
+        const response = await fetch('/api/teams');
+        const data = await response.json();
+        document.getElementById('response').textContent = JSON.stringify(data, null, 2);
+
+        if (response.ok) {
+          console.log("Teams retrieved successfully:", data);
+        } else {
+          console.error("Error retrieving teams:", data);
+        }
+      } catch (error) {
+        document.getElementById('response').textContent = `Error: ${error.message}`;
+        console.error("Error:", error);
+      }
+    }
+  </script>
+</body>
+
+</html>

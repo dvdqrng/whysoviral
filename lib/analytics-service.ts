@@ -1,4 +1,4 @@
-import { supabase } from './db/supabase'
+import { dbSupabase } from './db/supabase'
 
 interface PostAnalytics {
   avgViewsPerPost: number
@@ -9,7 +9,7 @@ interface PostAnalytics {
 
 export async function calculateUserAnalytics(username: string): Promise<PostAnalytics> {
   // Fetch user's posts ordered by creation date
-  const { data: posts, error } = await supabase
+  const { data: posts, error } = await dbSupabase
     .from('tiktok_posts')
     .select('*')
     .eq('username', username)
@@ -77,7 +77,7 @@ export async function calculateUserAnalytics(username: string): Promise<PostAnal
     }))
 
   // Store the calculated analytics
-  await supabase
+  await dbSupabase
     .from('users')
     .update({
       avg_views_per_post: avgViewsPerPost,

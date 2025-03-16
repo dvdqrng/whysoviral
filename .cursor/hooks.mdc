@@ -1,0 +1,56 @@
+---
+description: 
+globs: 
+alwaysApply: false
+---
+# Hooks
+
+This file contains cursor rules for custom React hooks used in the application.
+
+## Data Hooks
+
+```json
+{
+  "description": "TikTok Data Hooks",
+  "pattern": "hooks/useTikTok*.ts",
+  "context": "Custom hooks for fetching and managing TikTok data. Abstracts the interaction with TikTok services."
+}
+```
+
+```json
+{
+  "description": "API Hooks",
+  "pattern": "hooks/useApi*.ts",
+  "context": "Hooks for interacting with API endpoints, handling loading states, errors, and data caching."
+}
+```
+
+## Auth Hooks
+
+```json
+{
+  "description": "Authentication Hooks",
+  "pattern": "hooks/useAuth*.ts",
+  "context": "Hooks for authentication state and operations. Integrates with auth-context.tsx."
+}
+```
+
+## UI Hooks
+
+```json
+{
+  "description": "UI Hooks",
+  "pattern": "hooks/useUI*.ts",
+  "context": "Hooks for UI interactions, animations, and state management."
+}
+```
+
+## Utility Hooks
+
+```json
+{
+  "description": "Utility Hooks",
+  "pattern": "hooks/use[A-Z]*.ts",
+  "context": "General utility hooks for common React patterns like debouncing, media queries, and local storage."
+}
+``` 

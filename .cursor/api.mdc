@@ -1,0 +1,65 @@
+# API Routes
+
+This file contains cursor rules for API endpoints and API-related code.
+
+## API Routes
+
+```json
+{
+  "description": "TikTok API Routes",
+  "pattern": "app/api/tiktok/**",
+  "context": "API endpoints for TikTok data retrieval, processing, and caching. Interfaces with external TikTok API services."
+}
+```
+
+```json
+{
+  "description": "Authentication API Routes",
+  "pattern": "app/api/auth/**",
+  "context": "Authentication-related API endpoints for user sign-up, sign-in, and session management."
+}
+```
+
+```json
+{
+  "description": "Analytics API Routes",
+  "pattern": "app/api/analytics/**",
+  "context": "API endpoints for retrieving and processing analytics data for TikTok content."
+}
+```
+
+```json
+{
+  "description": "Team API Routes",
+  "pattern": "app/api/teams/**",
+  "context": "API endpoints for team management, including creating teams, inviting members, and managing TikTok group associations."
+}
+```
+
+## API Handlers
+
+```json
+{
+  "description": "API Error Handler",
+  "pattern": "lib/api/error-handler.ts",
+  "context": "Centralized error handling for API routes with consistent error response formatting."
+}
+```
+
+```json
+{
+  "description": "API Response Formatter",
+  "pattern": "lib/api/response.ts",
+  "context": "Utility for formatting API responses with consistent structure and status codes."
+}
+```
+
+## External API Integration
+
+```json
+{
+  "description": "External API Clients",
+  "pattern": "lib/api/clients/**",
+  "context": "Client configurations for external API services used by the application."
+}
+``` 

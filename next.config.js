@@ -9,12 +9,14 @@ const nextConfig = {
     parallelServerCompiles: true,
     parallelServerBuildTraces: true,
   },
-  // Prevent static generation errors for dynamic pages
-  unstable_excludeFiles: [
-    '**/app/auth/login/**',
-    '**/app/teams/join/**',
-    '**/app/api/auth/status/**',
-    '**/app/api/test-db/**'
+  // Set dynamic routes
+  dynamicRoutes: [
+    '/auth/login',
+    '/teams/join',
+    '/api/auth/status',
+    '/api/test-db',
+    '/api/tiktok/groups',
+    '/api/tiktok/user'
   ]
 };
 

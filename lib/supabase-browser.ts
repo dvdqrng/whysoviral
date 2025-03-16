@@ -13,9 +13,16 @@ const getCookieName = () => {
   return `sb-${projectRef}-auth-token`
 }
 
+// Create a singleton Supabase client instance
+let supabaseInstance: ReturnType<typeof createSupabaseClient> | null = null
+
 // Create a browser-specific Supabase client
 export const createClient = () => {
-  return createSupabaseClient(supabaseUrl, supabaseAnonKey, {
+  if (supabaseInstance) {
+    return supabaseInstance
+  }
+
+  supabaseInstance = createSupabaseClient(supabaseUrl, supabaseAnonKey, {
     auth: {
       persistSession: true,
       autoRefreshToken: true,
@@ -36,6 +43,8 @@ export const createClient = () => {
       }
     },
   })
+
+  return supabaseInstance
 }
 
 // Export the createClient function as default

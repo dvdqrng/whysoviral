@@ -1,11 +1,16 @@
 import { NextResponse } from "next/server"
-import { supabase } from "@/lib/db/supabase"
+import { cookies } from 'next/headers'
+import { createRouteHandlerClient } from '@supabase/auth-helpers-nextjs'
 
 export const runtime = 'nodejs'
 
 export async function GET() {
   try {
-    const { data, error } = await supabase.from('tiktok_users').select('count')
+    // Create a Supabase client specifically for route handlers
+    const cookieStore = cookies()
+    const supabaseClient = createRouteHandlerClient({ cookies: () => cookieStore })
+    
+    const { data, error } = await supabaseClient.from('tiktok_users').select('count')
 
     if (error) {
       console.error('Database error:', error)

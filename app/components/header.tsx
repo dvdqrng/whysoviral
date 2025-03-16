@@ -3,7 +3,7 @@
 import Link from "next/link"
 import { useAuth } from "@/lib/auth-context"
 import { Button } from "@/components/ui/button"
-import { supabase } from "@/lib/supabase"
+import { getSupabaseClient } from "@/lib/supabase"
 import { useRouter } from "next/navigation"
 import { ThemeSwitcher } from "@/components/theme-switcher"
 import { MainNav } from "./nav"
@@ -13,6 +13,7 @@ export default function Header() {
   const router = useRouter()
 
   const handleSignOut = async () => {
+    const supabase = getSupabaseClient()
     await supabase.auth.signOut()
     router.push("/")
     router.refresh()

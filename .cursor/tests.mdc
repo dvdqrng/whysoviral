@@ -1,0 +1,53 @@
+# Tests
+
+This file contains cursor rules for test files and test utilities in the application.
+
+## Component Tests
+
+```json
+{
+  "description": "Component Tests",
+  "pattern": "**/*.test.tsx",
+  "context": "Unit and integration tests for React components using testing frameworks like Jest and React Testing Library."
+}
+```
+
+## Service Tests
+
+```json
+{
+  "description": "Service Tests",
+  "pattern": "lib/**/*.test.ts",
+  "context": "Unit tests for service functions and utilities. Tests API interactions, data processing, and business logic."
+}
+```
+
+## API Tests
+
+```json
+{
+  "description": "API Tests",
+  "pattern": "app/api/**/*.test.ts",
+  "context": "Tests for API routes and handlers. Verifies request handling, response formatting, and error cases."
+}
+```
+
+## Test Utilities
+
+```json
+{
+  "description": "Test Utilities",
+  "pattern": "**/test-utils.ts",
+  "context": "Utility functions and helpers for testing. Includes mocks, fixtures, and test setup utilities."
+}
+```
+
+## Mock Data
+
+```json
+{
+  "description": "Mock Data",
+  "pattern": "**/__mocks__/**",
+  "context": "Mock data and service implementations for testing. Provides consistent test fixtures."
+}
+``` 

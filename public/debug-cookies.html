@@ -1,0 +1,228 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Debug Cookies & Auth</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      max-width: 1200px;
+      margin: 0 auto;
+      padding: 20px;
+    }
+
+    h1,
+    h2 {
+      margin-top: 30px;
+    }
+
+    pre {
+      background-color: #f5f5f5;
+      padding: 10px;
+      border-radius: 5px;
+      overflow-x: auto;
+      white-space: pre-wrap;
+    }
+
+    button {
+      background-color: #4CAF50;
+      color: white;
+      padding: 10px 15px;
+      border: none;
+      border-radius: 4px;
+      cursor: pointer;
+      margin: 5px;
+    }
+
+    button:hover {
+      background-color: #45a049;
+    }
+
+    .card {
+      border: 1px solid #ddd;
+      border-radius: 8px;
+      padding: 15px;
+      margin: 15px 0;
+      box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    }
+
+    .error {
+      color: red;
+    }
+
+    .success {
+      color: green;
+    }
+  </style>
+</head>
+
+<body>
+  <h1>Debug Cookies & Supabase Auth</h1>
+
+  <div class="card">
+    <h2>Cookie Information</h2>
+    <button onclick="displayCookies()">Check Cookies</button>
+    <pre id="cookieOutput">Click "Check Cookies" to see cookies available to JavaScript</pre>
+  </div>
+
+  <div class="card">
+    <h2>Supabase Debug API</h2>
+    <button onclick="callDebugApi()">Test Debug API</button>
+    <pre id="apiOutput">Click "Test Debug API" to see server-side cookie information</pre>
+  </div>
+
+  <div class="card">
+    <h2>Teams API Test</h2>
+    <div>
+      <button onclick="getTeams()">Get Teams</button>
+      <button onclick="createTeam()">Create Test Team</button>
+    </div>
+    <pre id="teamsOutput">Click a button to test the Teams API</pre>
+  </div>
+
+  <div class="card">
+    <h2>Setup Test Team (Admin mode)</h2>
+    <button onclick="createAdminTeam()">Create Test Team (Admin)</button>
+    <pre id="adminOutput">Click button to create a team with admin privileges</pre>
+  </div>
+
+  <script>
+    function displayCookies() {
+      const output = document.getElementById('cookieOutput');
+      try {
+        const cookies = document.cookie;
+        if (!cookies) {
+          output.textContent = "No cookies found!";
+          return;
+        }
+
+        const cookiesObj = {};
+        cookies.split(';').forEach(cookie => {
+          const parts = cookie.trim().split('=');
+          const name = parts[0];
+          const value = parts.slice(1).join('=');
+          cookiesObj[name] = value;
+        });
+
+        // Highlight supabase auth tokens
+        const supabaseTokens = {};
+        for (const [key, value] of Object.entries(cookiesObj)) {
+          if (key.includes('sb-') && key.includes('-auth-token')) {
+            supabaseTokens[key] = value ? value.substring(0, 20) + '...' : '[empty]';
+          }
+        }
+
+        output.innerHTML = `
+                    <strong>All Cookies:</strong>
+                    <div>${Object.keys(cookiesObj).length ? JSON.stringify(cookiesObj, null, 2) : 'No cookies found'}</div>
+                    
+                    <strong>Supabase Auth Tokens:</strong>
+                    <div>${Object.keys(supabaseTokens).length ? JSON.stringify(supabaseTokens, null, 2) : 'No Supabase tokens found'}</div>
+                `;
+      } catch (error) {
+        output.innerHTML = `<span class="error">Error reading cookies: ${error.message}</span>`;
+      }
+    }
+
+    async function callDebugApi() {
+      const output = document.getElementById('apiOutput');
+      output.textContent = 'Loading...';
+
+      try {
+        const response = await fetch('/api/debug-supabase');
+        const data = await response.json();
+
+        output.innerHTML = `
+                    <strong>Status:</strong> ${response.status} ${response.ok ? '<span class="success">OK</span>' : '<span class="error">Error</span>'}
+                    <strong>Response:</strong>
+                    <div>${JSON.stringify(data, null, 2)}</div>
+                `;
+      } catch (error) {
+        output.innerHTML = `<span class="error">API Error: ${error.message}</span>`;
+      }
+    }
+
+    async function getTeams() {
+      const output = document.getElementById('teamsOutput');
+      output.textContent = 'Loading teams...';
+
+      try {
+        const response = await fetch('/api/teams');
+        const data = await response.json();
+
+        output.innerHTML = `
+                    <strong>Status:</strong> ${response.status} ${response.ok ? '<span class="success">OK</span>' : '<span class="error">Error</span>'}
+                    <strong>Response:</strong>
+                    <div>${JSON.stringify(data, null, 2)}</div>
+                `;
+      } catch (error) {
+        output.innerHTML = `<span class="error">API Error: ${error.message}</span>`;
+      }
+    }
+
+    async function createTeam() {
+      const output = document.getElementById('teamsOutput');
+      output.textContent = 'Creating team...';
+
+      try {
+        const teamName = 'Test Team ' + new Date().toISOString().substring(0, 19);
+        const response = await fetch('/api/teams', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({
+            name: teamName,
+            description: 'Created from debug page'
+          })
+        });
+
+        const data = await response.json();
+
+        output.innerHTML = `
+                    <strong>Status:</strong> ${response.status} ${response.ok ? '<span class="success">OK</span>' : '<span class="error">Error</span>'}
+                    <strong>Response:</strong>
+                    <div>${JSON.stringify(data, null, 2)}</div>
+                `;
+      } catch (error) {
+        output.innerHTML = `<span class="error">API Error: ${error.message}</span>`;
+      }
+    }
+
+    async function createAdminTeam() {
+      const output = document.getElementById('adminOutput');
+      output.textContent = 'Creating team with admin privileges...';
+
+      try {
+        const teamName = 'Admin Team ' + new Date().toISOString().substring(0, 19);
+        const response = await fetch('/api/admin/create-test-team', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({
+            name: teamName,
+            description: 'Created from debug page with admin privileges'
+          })
+        });
+
+        const data = await response.json();
+
+        output.innerHTML = `
+                    <strong>Status:</strong> ${response.status} ${response.ok ? '<span class="success">OK</span>' : '<span class="error">Error</span>'}
+                    <strong>Response:</strong>
+                    <div>${JSON.stringify(data, null, 2)}</div>
+                `;
+      } catch (error) {
+        output.innerHTML = `<span class="error">API Error: ${error.message}</span>`;
+      }
+    }
+
+    // Automatically display cookies when the page loads
+    window.onload = displayCookies;
+  </script>
+</body>
+
+</html>

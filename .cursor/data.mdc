@@ -1,0 +1,156 @@
+# Data and Database
+
+This file contains cursor rules for data structures, types, and database-related code.
+
+## Data Types
+
+```json
+{
+  "description": "TikTok Profile Type",
+  "pattern": "type\\s+TikTokProfile",
+  "context": "Data structure representing a TikTok user profile. Contains profile data (user info) and posts data (videos). Used in tiktok-user-stats component."
+}
+```
+
+```json
+{
+  "description": "TikTok Group Type",
+  "pattern": "type\\s+TikTokGroup",
+  "context": "Data structure for grouping TikTok profiles for comparison and batch analysis. Contains id, name, and member usernames."
+}
+```
+
+```json
+{
+  "description": "TikTok Post Type",
+  "pattern": "type\\s+TikTokPost",
+  "context": "Data structure representing a single TikTok post with metadata, metrics, and content information."
+}
+```
+
+```json
+{
+  "description": "Team Type",
+  "pattern": "type\\s+Team",
+  "context": "Data structure representing a team of users who collaborate on TikTok analysis. Contains team info, members with roles, and associated TikTok groups."
+}
+```
+
+```json
+{
+  "description": "TeamMember Type",
+  "pattern": "type\\s+TeamMember",
+  "context": "Data structure representing a user's membership in a team, including their role and permissions."
+}
+```
+
+## Database Models
+
+```json
+{
+  "description": "Database Models",
+  "pattern": "lib/db/models/**",
+  "context": "Database model definitions that map to Supabase tables and relationships."
+}
+```
+
+```json
+{
+  "description": "Team Model",
+  "pattern": "lib/db/models/team.ts",
+  "context": "Database model for teams. Defines team structure, relationships with users and TikTok groups."
+}
+```
+
+```json
+{
+  "description": "Database Client",
+  "pattern": "lib/db/client.ts",
+  "context": "Database client configuration and connection management for Supabase."
+}
+```
+
+## Database Operations
+
+```json
+{
+  "description": "Database Migrations",
+  "pattern": "db/migrations/**",
+  "context": "Database migration files for schema changes and version control."
+}
+```
+
+```json
+{
+  "description": "Team Migrations",
+  "pattern": "db/migrations/*team*.sql",
+  "context": "Database migrations for team-related tables, relationships, and indexes."
+}
+```
+
+```json
+{
+  "description": "Database Queries",
+  "pattern": "lib/db/queries/**",
+  "context": "Database query functions for common operations on specific tables."
+}
+```
+
+```json
+{
+  "description": "Team Queries",
+  "pattern": "lib/db/queries/teams.ts",
+  "context": "Database queries for team operations like creating teams, managing members, and associations with TikTok groups."
+}
+```
+
+## Data Transformation
+
+```json
+{
+  "description": "Data Transformers",
+  "pattern": "lib/transformers/**",
+  "context": "Utility functions for transforming data between API, database, and UI formats."
+}
+```
+
+## Supabase Commands
+
+```json
+{
+  "description": "Run Supabase Migrations",
+  "pattern": "npx supabase db push",
+  "context": "Apply local migrations to the remote Supabase database. Used to update the schema in production after local testing."
+}
+```
+
+```json
+{
+  "description": "Link Supabase Project",
+  "pattern": "npx supabase link --project-ref YOUR_PROJECT_REF",
+  "context": "Connect local development environment to a remote Supabase project. Required before pushing migrations to remote database."
+}
+```
+
+```json
+{
+  "description": "Execute SQL File in Supabase",
+  "pattern": "docker exec -i supabase_db_whysoviral psql -U postgres postgres < *.sql",
+  "context": "Run SQL commands from a file against the local Supabase database container. Used for database initialization and custom scripts."
+}
+```
+
+```json
+{
+  "description": "Execute SQL Query in Supabase",
+  "pattern": "docker exec -i supabase_db_whysoviral psql -U postgres postgres -c \"*\"",
+  "context": "Execute a SQL query directly in the local Supabase database. Used for ad-hoc queries and checking database state."
+}
+```
+
+```json
+{
+  "description": "Create All Accounts Team",
+  "pattern": "DO $$*owner_id*team_id*INSERT INTO public.teams*INSERT INTO public.team_members*END $$",
+  "context": "PL/pgSQL block to create the All Accounts team and connect it to a user. Used in the legacy data migration process."
+} 

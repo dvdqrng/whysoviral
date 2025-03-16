@@ -1,0 +1,71 @@
+---
+description: 
+globs: 
+---
+# App Structure
+
+This file contains cursor rules for the main application structure, layouts, and pages.
+
+```json
+{
+  "description": "Main App Page",
+  "pattern": "app/page.tsx",
+  "context": "Landing page with options for Single Video Analysis and Account Analysis. Displays key features and links to tier1/tier2 routes."
+}
+```
+
+```json
+{
+  "description": "App Layout",
+  "pattern": "app/layout.tsx",
+  "context": "Root layout with ThemeProvider and AuthProvider wrappers. Sets up global layout structure including header and navigation."
+}
+```
+
+```json
+{
+  "description": "Global CSS",
+  "pattern": "app/globals.css",
+  "context": "Global styles and Tailwind CSS utilities. Contains global resets and base styling."
+}
+```
+
+```json
+{
+  "description": "Authentication Pages",
+  "pattern": "app/auth/**",
+  "context": "Authentication related pages (sign-in, sign-up, password reset). Integrates with Supabase auth."
+}
+```
+
+```json
+{
+  "description": "Tier 1 - Single Video Analysis",
+  "pattern": "app/tier1/**",
+  "context": "Single TikTok video analysis feature. Allows users to paste a TikTok URL and get metrics + AI insights."
+}
+```
+
+```json
+{
+  "description": "Tier 2 - Account Analysis",
+  "pattern": "app/tier2/**",
+  "context": "Comprehensive TikTok account analysis. Connects to user accounts and analyzes patterns across videos."
+}
+```
+
+```json
+{
+  "description": "Debug Routes",
+  "pattern": "app/debug/**",
+  "context": "Development/debugging routes for testing functionality. Not visible in production."
+}
+```
+
+```json
+{
+  "description": "Middleware",
+  "pattern": "middleware.ts",
+  "context": "Next.js middleware for route protection, authentication checks, and request processing."
+}
+``` 

@@ -1,7 +1,8 @@
 import { NextResponse } from "next/server"
 import { getUserPosts, extractUserId, extractUsername, resolveUsername } from "@/lib/tiktok-scraper-service"
-import { upsertTikTokPosts } from "@/lib/db/supabase"
 import { getUserInfo } from "@/lib/tiktok-scraper-service"
+import { cookies } from 'next/headers'
+import { createRouteHandlerClient } from '@supabase/auth-helpers-nextjs'
 
 export const dynamic = "force-dynamic"
 
@@ -46,6 +47,10 @@ export async function POST(req: Request) {
     const userInfo = await getUserInfo(userId)
     const username = userInfo.data.user.uniqueId
 
+    // Create a Supabase client specifically for route handlers
+    const cookieStore = cookies()
+    const supabaseClient = createRouteHandlerClient({ cookies: () => cookieStore })
+
     // Store posts in Supabase
     const posts = apiResponse.data.videos.map((video: any) => ({
       id: video.id || video.video_id,
@@ -59,7 +64,7 @@ export async function POST(req: Request) {
       bookmarks: video.downloadCount || 0,
       video_duration: video.duration || 0,
       video_ratio: video.ratio || '',
-      video_cover_url: video.cover || '',
+      video_cover_url: video.cover || video.origin_cover || video.dynamicCover || '',
       video_play_url: video.play || '',
       music_title: video.music?.title || '',
       music_author: video.music?.author || '',
@@ -69,12 +74,25 @@ export async function POST(req: Request) {
       is_pinned: video.is_top || false,
       is_ad: video.is_ad || false,
       region: video.region || '',
-      hashtags: JSON.stringify(video.hashtags || []),
-      mentions: JSON.stringify(video.mentions || [])
+      hashtags: JSON.stringify(Array.isArray(video.hashtags) ? video.hashtags : []),
+      mentions: JSON.stringify(Array.isArray(video.mentions) ? video.mentions : []),
+      last_updated: new Date().toISOString()
     }))
 
     console.log('Storing posts in Supabase:', posts.length)
-    await upsertTikTokPosts(posts, username)
+    
+    // Directly upsert posts using the route handler client
+    const { data, error } = await supabaseClient
+      .from('tiktok_posts')
+      .upsert(posts)
+      .select()
+
+    if (error) {
+      console.error('Database error during posts upsert:', error)
+      throw error
+    }
+    
+    console.log('Successfully upserted posts:', data?.length)
 
     // Return the transformed response
     return NextResponse.json({

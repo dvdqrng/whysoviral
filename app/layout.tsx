@@ -4,8 +4,14 @@ import Header from "./components/header"
 import { AuthProvider } from "@/lib/auth-context"
 import { ThemeProvider } from "@/components/theme-provider"
 import type React from "react"
+import SessionSync from "@/app/components/session-sync"
 
-const inter = Inter({ subsets: ["latin"] })
+const inter = Inter({
+  subsets: ["latin"],
+  display: 'swap',
+  preload: true,
+  adjustFontFallback: false
+})
 
 export const metadata = {
   title: "Why So Viral - TikTok Analytics",
@@ -27,6 +33,7 @@ export default function RootLayout({
           disableTransitionOnChange
         >
           <AuthProvider>
+            <SessionSync />
             <Header />
             <main className="container mx-auto px-4 py-8">{children}</main>
           </AuthProvider>

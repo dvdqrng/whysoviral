@@ -1,0 +1,95 @@
+---
+description: 
+globs: 
+---
+# Services
+
+This file contains cursor rules for the application's service layer, including data fetching, processing, and external API integrations.
+
+## TikTok Data Services
+
+```json
+{
+  "description": "TikTok Scraper Service",
+  "pattern": "lib/tiktok-scraper-service.ts",
+  "context": "Service for fetching TikTok data using RapidAPI. Handles user profile info, posts, and metrics. Contains methods like resolveUsername, getUserInfo, and getUserVideos."
+}
+```
+
+```json
+{
+  "description": "TikTok Post Service",
+  "pattern": "lib/tiktok-post-service.ts",
+  "context": "Service for processing individual TikTok posts. Extracts metadata, parses video information, and prepares data for the UI components."
+}
+```
+
+```json
+{
+  "description": "TikTok Scraper Core",
+  "pattern": "lib/tiktok-scraper.ts",
+  "context": "Core utilities for TikTok data scraping. Contains base functions used by the scraper service."
+}
+```
+
+## Analysis Services
+
+```json
+{
+  "description": "Analytics Service",
+  "pattern": "lib/analytics-service.ts",
+  "context": "Service for calculating and processing TikTok analytics. Generates trends, patterns, and statistical insights from post data."
+}
+```
+
+```json
+{
+  "description": "AI Insights Service",
+  "pattern": "lib/ai-insights.ts",
+  "context": "Service that generates AI-powered insights for TikTok content. May use external AI APIs for advanced insights."
+}
+```
+
+```json
+{
+  "description": "Video Analysis Service",
+  "pattern": "lib/video-analysis.ts",
+  "context": "Service for analyzing video content, including scene detection, content categorization, and visual element extraction."
+}
+```
+
+## Database and Authentication
+
+```json
+{
+  "description": "Supabase Integration",
+  "pattern": "lib/supabase.ts",
+  "context": "Supabase client setup and utility functions. Handles database connections, auth, and storage operations."
+}
+```
+
+```json
+{
+  "description": "Authentication Context",
+  "pattern": "lib/auth-context.tsx",
+  "context": "React context for authentication state management. Provides user state and auth methods to the application."
+}
+```
+
+## Utilities
+
+```json
+{
+  "description": "Logger Service",
+  "pattern": "lib/logger.ts",
+  "context": "Logging utility for consistent error and event logging throughout the application."
+}
+```
+
+```json
+{
+  "description": "Utility Functions",
+  "pattern": "lib/utils.ts",
+  "context": "General utility functions used across the application, including helpers for formatting, validation, and data transformation."
+}
+``` 

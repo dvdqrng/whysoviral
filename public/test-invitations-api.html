@@ -1,0 +1,290 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Team Invitations API Test</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      line-height: 1.6;
+      max-width: 800px;
+      margin: 0 auto;
+      padding: 20px;
+    }
+
+    button {
+      padding: 8px 16px;
+      margin-right: 10px;
+      margin-bottom: 10px;
+      cursor: pointer;
+    }
+
+    pre {
+      background-color: #f5f5f5;
+      padding: 15px;
+      border-radius: 5px;
+      overflow-x: auto;
+    }
+
+    .input-group {
+      margin-bottom: 15px;
+    }
+
+    input,
+    select {
+      padding: 8px;
+      width: 100%;
+      margin-top: 5px;
+    }
+  </style>
+</head>
+
+<body>
+  <h1>Team Invitations API Test</h1>
+
+  <div>
+    <h2>Your Teams</h2>
+    <div class="input-group">
+      <label for="team-select">Select Team:</label>
+      <select id="team-select">
+        <option value="">Loading teams...</option>
+      </select>
+      <button onclick="loadTeams()">Refresh Teams</button>
+    </div>
+  </div>
+
+  <div>
+    <h2>Invite User to Team</h2>
+    <div class="input-group">
+      <label for="invite-email">Email:</label>
+      <input type="email" id="invite-email" placeholder="user@example.com">
+    </div>
+
+    <div class="input-group">
+      <label for="invite-role">Role:</label>
+      <select id="invite-role">
+        <option value="member">Member</option>
+        <option value="admin">Admin</option>
+      </select>
+    </div>
+
+    <button onclick="inviteUser()">Send Invitation</button>
+  </div>
+
+  <div>
+    <h2>Team Invitations</h2>
+    <button onclick="getInvitations()">Get Invitations</button>
+    <div id="invitations-list"></div>
+  </div>
+
+  <h2>Response:</h2>
+  <pre id="response">Results will appear here...</pre>
+
+  <script>
+    // Load teams on page load
+    document.addEventListener('DOMContentLoaded', loadTeams);
+
+    async function loadTeams() {
+      try {
+        const response = await fetch('/api/teams');
+        const data = await response.json();
+
+        if (response.ok && data.teams) {
+          const select = document.getElementById('team-select');
+          select.innerHTML = '';
+
+          if (data.teams.length === 0) {
+            select.innerHTML = '<option value="">No teams available</option>';
+          } else {
+            data.teams.forEach(team => {
+              const option = document.createElement('option');
+              option.value = team.id;
+              option.textContent = team.name;
+              select.appendChild(option);
+            });
+          }
+        } else {
+          console.error("Error loading teams:", data);
+          document.getElementById('team-select').innerHTML = '<option value="">Error loading teams</option>';
+        }
+      } catch (error) {
+        console.error("Error:", error);
+        document.getElementById('team-select').innerHTML = '<option value="">Error loading teams</option>';
+      }
+    }
+
+    async function inviteUser() {
+      try {
+        const teamId = document.getElementById('team-select').value;
+        const email = document.getElementById('invite-email').value;
+        const role = document.getElementById('invite-role').value;
+
+        if (!teamId) {
+          document.getElementById('response').textContent = 'Please select a team';
+          return;
+        }
+
+        if (!email) {
+          document.getElementById('response').textContent = 'Please enter an email address';
+          return;
+        }
+
+        const response = await fetch(`/api/teams/${teamId}/invitations`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({
+            email,
+            role
+          })
+        });
+
+        const data = await response.json();
+        document.getElementById('response').textContent = JSON.stringify(data, null, 2);
+
+        if (response.ok) {
+          console.log("Invitation sent successfully:", data);
+          getInvitations(); // Refresh invitations list
+        } else {
+          console.error("Error sending invitation:", data);
+        }
+      } catch (error) {
+        document.getElementById('response').textContent = `Error: ${error.message}`;
+        console.error("Error:", error);
+      }
+    }
+
+    async function getInvitations() {
+      try {
+        const teamId = document.getElementById('team-select').value;
+
+        if (!teamId) {
+          document.getElementById('response').textContent = 'Please select a team';
+          return;
+        }
+
+        const response = await fetch(`/api/teams/${teamId}/invitations`);
+        const data = await response.json();
+        document.getElementById('response').textContent = JSON.stringify(data, null, 2);
+
+        if (response.ok && data.invitations) {
+          displayInvitations(data.invitations);
+          console.log("Invitations retrieved successfully:", data);
+        } else {
+          console.error("Error retrieving invitations:", data);
+          document.getElementById('invitations-list').innerHTML = '<p>Error loading invitations</p>';
+        }
+      } catch (error) {
+        document.getElementById('response').textContent = `Error: ${error.message}`;
+        console.error("Error:", error);
+        document.getElementById('invitations-list').innerHTML = '<p>Error loading invitations</p>';
+      }
+    }
+
+    function displayInvitations(invitations) {
+      const container = document.getElementById('invitations-list');
+      container.innerHTML = '';
+
+      if (invitations.length === 0) {
+        container.innerHTML = '<p>No pending invitations</p>';
+        return;
+      }
+
+      const table = document.createElement('table');
+      table.style.width = '100%';
+      table.style.borderCollapse = 'collapse';
+      table.style.marginTop = '10px';
+
+      // Create header
+      const thead = document.createElement('thead');
+      const headerRow = document.createElement('tr');
+      ['Email', 'Role', 'Status', 'Actions'].forEach(text => {
+        const th = document.createElement('th');
+        th.textContent = text;
+        th.style.textAlign = 'left';
+        th.style.padding = '8px';
+        th.style.borderBottom = '1px solid #ddd';
+        headerRow.appendChild(th);
+      });
+      thead.appendChild(headerRow);
+      table.appendChild(thead);
+
+      // Create body
+      const tbody = document.createElement('tbody');
+      invitations.forEach(invitation => {
+        const row = document.createElement('tr');
+
+        // Email cell
+        const emailCell = document.createElement('td');
+        emailCell.textContent = invitation.email;
+        emailCell.style.padding = '8px';
+        emailCell.style.borderBottom = '1px solid #ddd';
+        row.appendChild(emailCell);
+
+        // Role cell
+        const roleCell = document.createElement('td');
+        roleCell.textContent = invitation.role;
+        roleCell.style.padding = '8px';
+        roleCell.style.borderBottom = '1px solid #ddd';
+        row.appendChild(roleCell);
+
+        // Status cell
+        const statusCell = document.createElement('td');
+        statusCell.textContent = invitation.status || 'Pending';
+        statusCell.style.padding = '8px';
+        statusCell.style.borderBottom = '1px solid #ddd';
+        row.appendChild(statusCell);
+
+        // Actions cell
+        const actionsCell = document.createElement('td');
+        actionsCell.style.padding = '8px';
+        actionsCell.style.borderBottom = '1px solid #ddd';
+
+        const deleteButton = document.createElement('button');
+        deleteButton.textContent = 'Delete';
+        deleteButton.onclick = () => deleteInvitation(invitation.id);
+        actionsCell.appendChild(deleteButton);
+
+        row.appendChild(actionsCell);
+
+        tbody.appendChild(row);
+      });
+      table.appendChild(tbody);
+
+      container.appendChild(table);
+    }
+
+    async function deleteInvitation(invitationId) {
+      try {
+        const teamId = document.getElementById('team-select').value;
+
+        if (!teamId || !invitationId) {
+          document.getElementById('response').textContent = 'Missing team ID or invitation ID';
+          return;
+        }
+
+        const response = await fetch(`/api/teams/${teamId}/invitations?id=${invitationId}`, {
+          method: 'DELETE'
+        });
+
+        const data = await response.json();
+        document.getElementById('response').textContent = JSON.stringify(data, null, 2);
+
+        if (response.ok) {
+          console.log("Invitation deleted successfully:", data);
+          getInvitations(); // Refresh invitations list
+        } else {
+          console.error("Error deleting invitation:", data);
+        }
+      } catch (error) {
+        document.getElementById('response').textContent = `Error: ${error.message}`;
+        console.error("Error:", error);
+      }
+    }
+  </script>
+</body>
+
+</html>

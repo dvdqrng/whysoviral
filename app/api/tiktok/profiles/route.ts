@@ -1,13 +1,18 @@
 import { NextResponse } from "next/server"
-import { supabase } from "@/lib/db/supabase"
+import { cookies } from 'next/headers'
+import { createRouteHandlerClient } from '@supabase/auth-helpers-nextjs'
 
 export const dynamic = "force-dynamic"
 
 export async function GET() {
   try {
-    // Fetch all users from the tiktok_users table
-    const { data: users, error: usersError } = await supabase
-      .from('tiktok_users')
+    // Create a Supabase client specifically for route handlers
+    const cookieStore = cookies()
+    const supabaseClient = createRouteHandlerClient({ cookies: () => cookieStore })
+    
+    // Fetch all users from the tiktok_accounts table
+    const { data: users, error: usersError } = await supabaseClient
+      .from('tiktok_accounts')
       .select('*')
       .order('last_updated', { ascending: false })
 
@@ -15,29 +20,11 @@ export async function GET() {
       throw usersError
     }
 
-    // For each user, fetch their posts
-    const profiles = await Promise.all(
-      users.map(async (user) => {
-        const { data: posts, error: postsError } = await supabase
-          .from('tiktok_posts')
-          .select('*')
-          .eq('username', user.username)
-          .order('created_at', { ascending: false })
-
-        if (postsError) {
-          console.error(`Error fetching posts for ${user.username}:`, postsError)
-          return null
-        }
-
-        return {
-          user,
-          posts: posts || []
-        }
-      })
-    )
-
-    // Filter out any null results from failed fetches
-    const validProfiles = profiles.filter(profile => profile !== null)
+    // Return the accounts directly without trying to fetch posts
+    const validProfiles = users.map(user => ({
+      user,
+      posts: [] // Empty array since we don't have a posts table yet
+    }));
 
     return NextResponse.json({
       success: true,

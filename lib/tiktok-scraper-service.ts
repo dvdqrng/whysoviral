@@ -17,20 +17,19 @@ export async function resolveUsername(username: string) {
   username = username.replace('@', '')
   console.log(`Processing username: ${username}`)
 
-  // Use the feed/user endpoint which is more reliable for username resolution
-  const endpoint = `https://${TIKTOK_API_HOST}/feed/user`
-  console.log(`Making request to: ${endpoint}`)
+  // Use the user/info endpoint with the username
+  const endpoint = `https://${TIKTOK_API_HOST}/user/info`
+  const params = new URLSearchParams({ unique_id: username })
+  const url = `${endpoint}?${params.toString()}`
+  console.log(`Making request to: ${url}`)
 
   try {
-    const response = await fetch(endpoint, {
-      method: 'POST',
+    const response = await fetch(url, {
+      method: 'GET',
       headers: {
         ...headers,
         'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        unique_id: username
-      })
+      }
     })
 
     console.log(`Response status: ${response.status}`)
@@ -53,17 +52,20 @@ export async function resolveUsername(username: string) {
       throw new Error('Invalid response format from API')
     }
 
-    if (!data.user?.id) {
+    // Check for user ID in both possible locations
+    const userId = data.data?.user?.id || data.user?.id
+    
+    if (!userId) {
       console.error('Missing user ID in response:', data)
       throw new Error('User ID not found in API response')
     }
 
     console.log('Successfully resolved username:', {
       username,
-      userId: data.user.id
+      userId
     })
 
-    return data.user.id
+    return userId
   } catch (error) {
     console.error('Error in username resolution:', error)
     throw error
@@ -212,7 +214,7 @@ export async function getUserPosts(userId: string, count: number = 10, cursor: s
         video_id: video.video_id || video.aweme_id,
         desc: video.title || video.desc || '',
         createTime: video.create_time,
-        cover: video.cover,
+        cover: video.cover || video.origin_cover || video.dynamic_cover || video.thumbnail_url,
         playCount: video.play_count,
         diggCount: video.digg_count,
         commentCount: video.comment_count,

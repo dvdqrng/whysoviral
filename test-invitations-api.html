@@ -1,0 +1,205 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Team Invitations API Test</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      line-height: 1.6;
+      max-width: 800px;
+      margin: 0 auto;
+      padding: 20px;
+    }
+
+    button {
+      padding: 8px 16px;
+      margin-right: 10px;
+      margin-bottom: 10px;
+      cursor: pointer;
+    }
+
+    pre {
+      background-color: #f5f5f5;
+      padding: 15px;
+      border-radius: 5px;
+      overflow-x: auto;
+    }
+
+    .input-group {
+      margin-bottom: 15px;
+    }
+
+    input,
+    select {
+      padding: 8px;
+      width: 100%;
+      margin-top: 5px;
+    }
+
+    .section {
+      margin-bottom: 30px;
+      padding-bottom: 20px;
+      border-bottom: 1px solid #eee;
+    }
+  </style>
+</head>
+
+<body>
+  <h1>Team Invitations API Test</h1>
+
+  <div class="section">
+    <h2>Get Team Invitations</h2>
+    <div class="input-group">
+      <label for="team-id">Team ID:</label>
+      <input type="text" id="team-id" value="dedbfa49-7f25-481c-a472-47bedf69a02b">
+    </div>
+
+    <button onclick="getTeamInvitations()">Get Invitations</button>
+  </div>
+
+  <div class="section">
+    <h2>Create Team Invitation</h2>
+    <div class="input-group">
+      <label for="invite-team-id">Team ID:</label>
+      <input type="text" id="invite-team-id" value="dedbfa49-7f25-481c-a472-47bedf69a02b">
+    </div>
+    <div class="input-group">
+      <label for="invite-email">Email:</label>
+      <input type="email" id="invite-email" placeholder="Enter email address">
+    </div>
+    <div class="input-group">
+      <label for="invite-role">Role:</label>
+      <select id="invite-role">
+        <option value="member">Member</option>
+        <option value="admin">Admin</option>
+      </select>
+    </div>
+
+    <button onclick="createInvitation()">Create Invitation</button>
+  </div>
+
+  <div class="section">
+    <h2>Delete Team Invitation</h2>
+    <div class="input-group">
+      <label for="delete-team-id">Team ID:</label>
+      <input type="text" id="delete-team-id" value="dedbfa49-7f25-481c-a472-47bedf69a02b">
+    </div>
+    <div class="input-group">
+      <label for="invitation-id">Invitation ID:</label>
+      <input type="text" id="invitation-id" placeholder="Enter invitation ID">
+    </div>
+
+    <button onclick="deleteInvitation()">Delete Invitation</button>
+  </div>
+
+  <h2>Response:</h2>
+  <pre id="response">Results will appear here...</pre>
+
+  <script>
+    async function getTeamInvitations() {
+      try {
+        const teamId = document.getElementById('team-id').value;
+
+        // Make the API request
+        const response = await fetch(`/api/teams/${teamId}/invitations`, {
+          method: 'GET',
+          headers: {
+            'Content-Type': 'application/json'
+          },
+          // This will include the browser's cookies
+          credentials: 'same-origin'
+        });
+
+        const data = await response.json();
+        document.getElementById('response').textContent = JSON.stringify(data, null, 2);
+
+        if (response.ok) {
+          console.log("Team invitations retrieved successfully:", data);
+        } else {
+          console.error("Error retrieving team invitations:", data);
+        }
+      } catch (error) {
+        document.getElementById('response').textContent = `Error: ${error.message}`;
+        console.error("Error:", error);
+      }
+    }
+
+    async function createInvitation() {
+      try {
+        const teamId = document.getElementById('invite-team-id').value;
+        const email = document.getElementById('invite-email').value;
+        const role = document.getElementById('invite-role').value;
+
+        if (!email) {
+          document.getElementById('response').textContent = "Error: Email is required";
+          return;
+        }
+
+        // Make the API request
+        const response = await fetch(`/api/teams/${teamId}/invitations`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({
+            email,
+            role
+          }),
+          // This will include the browser's cookies
+          credentials: 'same-origin'
+        });
+
+        const data = await response.json();
+        document.getElementById('response').textContent = JSON.stringify(data, null, 2);
+
+        if (response.ok) {
+          console.log("Invitation created successfully:", data);
+        } else {
+          console.error("Error creating invitation:", data);
+        }
+      } catch (error) {
+        document.getElementById('response').textContent = `Error: ${error.message}`;
+        console.error("Error:", error);
+      }
+    }
+
+    async function deleteInvitation() {
+      try {
+        const teamId = document.getElementById('delete-team-id').value;
+        const invitationId = document.getElementById('invitation-id').value;
+
+        if (!invitationId) {
+          document.getElementById('response').textContent = "Error: Invitation ID is required";
+          return;
+        }
+
+        // Make the API request
+        const response = await fetch(`/api/teams/${teamId}/invitations?invitationId=${invitationId}`, {
+          method: 'DELETE',
+          headers: {
+            'Content-Type': 'application/json'
+          },
+          // This will include the browser's cookies
+          credentials: 'same-origin'
+        });
+
+        const data = await response.json();
+        document.getElementById('response').textContent = JSON.stringify(data, null, 2);
+
+        if (response.ok) {
+          console.log("Invitation deleted successfully:", data);
+        } else {
+          console.error("Error deleting invitation:", data);
+        }
+      } catch (error) {
+        document.getElementById('response').textContent = `Error: ${error.message}`;
+        console.error("Error:", error);
+      }
+    }
+  </script>
+</body>
+
+</html>

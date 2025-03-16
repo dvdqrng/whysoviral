@@ -2,7 +2,7 @@
 
 import { useState } from "react"
 import { useRouter } from "next/navigation"
-import { supabase } from "@/lib/supabase"
+import { getSupabaseClient } from "@/lib/supabase"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
@@ -21,22 +21,37 @@ export default function Signup() {
     setError(null)
 
     try {
-      const { error: signUpError } = await supabase.auth.signUp({
+      console.log('Attempting to sign up with email:', email)
+
+      const { data, error: signUpError } = await getSupabaseClient().auth.signUp({
         email,
         password,
         options: {
+          emailRedirectTo: `${window.location.origin}/auth/login`,
           data: {
             tier: "tier1", // Default tier for new users
           },
         },
       })
 
-      if (signUpError) throw signUpError
+      if (signUpError) {
+        console.error('Signup error:', signUpError)
+        throw signUpError
+      }
+
+      console.log('Signup response:', data)
+
+      // Check if confirmation email was sent
+      if (data?.user?.identities?.length === 0) {
+        setError("This email is already registered. Please sign in instead.")
+        return
+      }
 
       router.push("/auth/verify")
       router.refresh()
     } catch (error) {
-      setError(error.message)
+      console.error('Caught error during signup:', error)
+      setError(error.message || "An error occurred during signup.")
     } finally {
       setLoading(false)
     }

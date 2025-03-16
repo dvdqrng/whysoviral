@@ -1,0 +1,77 @@
+---
+description: 
+globs: 
+---
+# Configuration
+
+This file contains cursor rules for application configuration, settings, and environment variables.
+
+## Environment Configuration
+
+```json
+{
+  "description": "Environment Variables",
+  "pattern": ".env*",
+  "context": "Environment variable definitions for the application. Contains API keys, connection strings, and configuration settings."
+}
+```
+
+```json
+{
+  "description": "Next.js Config",
+  "pattern": "next.config.mjs",
+  "context": "Next.js configuration file. Defines build settings, redirects, rewrites, and middleware options."
+}
+```
+
+```json
+{
+  "description": "TypeScript Config",
+  "pattern": "tsconfig.json",
+  "context": "TypeScript configuration for the project. Defines compiler options, type checking rules, and included files."
+}
+```
+
+## UI Configuration
+
+```json
+{
+  "description": "Tailwind Config",
+  "pattern": "tailwind.config.ts",
+  "context": "Tailwind CSS configuration. Defines theme customizations, colors, typography, and other design tokens."
+}
+```
+
+```json
+{
+  "description": "PostCSS Config",
+  "pattern": "postcss.config.mjs",
+  "context": "PostCSS configuration for processing CSS. Configures plugins like autoprefixer and tailwindcss."
+}
+```
+
+```json
+{
+  "description": "UI Component Config",
+  "pattern": "components.json",
+  "context": "Configuration for shadcn/ui components. Defines component styling and themes."
+}
+```
+
+## Deployment and Scripts
+
+```json
+{
+  "description": "Package Config",
+  "pattern": "package.json",
+  "context": "NPM package configuration. Defines dependencies, scripts, and project metadata."
+}
+```
+
+```json
+{
+  "description": "Vercel Config",
+  "pattern": ".vercel/**",
+  "context": "Vercel deployment configuration and settings for the application."
+}
+``` 

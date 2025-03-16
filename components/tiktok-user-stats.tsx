@@ -202,19 +202,26 @@ export default function TikTokUserStats() {
         setIsLoadingGroups(true)
         const response = await fetch('/api/tiktok/groups')
 
-        if (!response.ok) {
-          throw new Error(`Failed to fetch groups: ${response.status} ${response.statusText}`)
+        // Always set empty groups as fallback
+        let groupData: TikTokGroup[] = []
+
+        if (response.ok) {
+          try {
+            const data = await response.json()
+            if (data.success && Array.isArray(data.data)) {
+              groupData = data.data
+            }
+          } catch (parseError) {
+            console.error('Error parsing groups response:', parseError)
+          }
+        } else {
+          console.warn(`Groups API returned status: ${response.status} ${response.statusText}`)
         }
 
-        const data = await response.json()
-        if (!data.success) {
-          throw new Error(data.error || 'Failed to fetch groups')
-        }
-
-        setGroups(data.data || [])
+        setGroups(groupData)
       } catch (error) {
         console.error('Error loading groups:', error)
-        // Don't set error state, just log it and continue with empty groups
+        // Set empty groups array to avoid breaking the UI
         setGroups([])
       } finally {
         setIsLoadingGroups(false)

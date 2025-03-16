@@ -1,0 +1,133 @@
+# Components
+
+This file contains cursor rules for application components, organized by their primary purpose.
+
+## Core TikTok Analysis Components
+
+```json
+{
+  "description": "TikTok User Stats Component",
+  "pattern": "components/tiktok-user-stats.tsx",
+  "context": "Main component for analyzing TikTok user profiles and metrics. Handles displaying user data, posts, and analytics charts. Interacts with tiktok-scraper-service and analytics-service."
+}
+```
+
+```json
+{
+  "description": "TikTok Post Stats Component",
+  "pattern": "components/tiktok-post-stats.tsx",
+  "context": "Component for analyzing individual TikTok post metrics. Displays view count, likes, comments, and AI-generated insights for a single video. Uses video-analysis.ts for scene detection."
+}
+```
+
+## Team Components
+
+```json
+{
+  "description": "Team Management Component",
+  "pattern": "components/team/team-management.tsx",
+  "context": "Component for creating and managing teams. Allows adding/removing members and associating TikTok groups with teams."
+}
+```
+
+```json
+{
+  "description": "Team Members List Component",
+  "pattern": "components/team/team-members-list.tsx",
+  "context": "Component for displaying and managing team members, including roles and permissions."
+}
+```
+
+```json
+{
+  "description": "Invite Users Component",
+  "pattern": "components/team/invite-users.tsx",
+  "context": "Component for sending invitations to users to join a team. Handles email or link-based invitations."
+}
+```
+
+```json
+{
+  "description": "Team TikTok Groups Component",
+  "pattern": "components/team/team-tiktok-groups.tsx",
+  "context": "Component for managing TikTok groups associated with a team. Allows adding and removing TikTok groups."
+}
+```
+
+## Layout Components
+
+```json
+{
+  "description": "Header Component",
+  "pattern": "app/components/header.tsx",
+  "context": "Application header with logo, navigation menu, authentication controls, and theme switcher. Used in app/layout.tsx."
+}
+```
+
+```json
+{
+  "description": "Navigation Component",
+  "pattern": "app/components/nav.tsx",
+  "context": "Main navigation menu with links to different app sections. Displays different options based on authentication state."
+}
+```
+
+## Theme Components
+
+```json
+{
+  "description": "Theme Provider",
+  "pattern": "components/theme-provider.tsx",
+  "context": "Next-themes provider component that manages light/dark theme state. Wraps the application in app/layout.tsx."
+}
+```
+
+```json
+{
+  "description": "Theme Switcher",
+  "pattern": "components/theme-switcher.tsx",
+  "context": "UI component for toggling between light and dark themes. Uses next-themes and displays in the header."
+}
+```
+
+## UI Components
+
+```json
+{
+  "description": "UI Components",
+  "pattern": "components/ui/**",
+  "context": "Reusable shadcn/ui components for building interfaces. These are the building blocks for the entire application UI."
+}
+```
+
+```json
+{
+  "description": "Button Component",
+  "pattern": "components/ui/button.tsx",
+  "context": "Reusable button component with variants, styles, and accessibility features."
+}
+```
+
+```json
+{
+  "description": "Card Component",
+  "pattern": "components/ui/card.tsx",
+  "context": "Card UI components including Card, CardHeader, CardTitle, CardDescription, CardContent, and CardFooter."
+}
+```
+
+```json
+{
+  "description": "Input Component",
+  "pattern": "components/ui/input.tsx",
+  "context": "Form input component with styling and accessibility features."
+}
+```
+
+```json
+{
+  "description": "Dialog Component",
+  "pattern": "components/ui/dialog.tsx",
+  "context": "Modal dialog component for displaying content that requires user interaction."
+}
+``` 

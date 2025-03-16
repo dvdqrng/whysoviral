@@ -26,6 +26,47 @@ export async function POST(req: Request) {
       )
     }
 
+    try {
+      // First try to parse the URL for a username or ID
+      const username = extractUsername(profileUrl)
+      const userId = extractUserId(profileUrl)
+      
+      // If neither could be extracted, try to resolve the username from the full URL
+      const resolvedUsername = !username && !userId ? await resolveUsername(profileUrl) : null
+      
+      // Use the best value we have, in order of preference
+      const identifier = userId || username || resolvedUsername
+      
+      if (!identifier) {
+        return NextResponse.json(
+          { success: false, error: 'Could not extract valid username or user ID from the provided URL' },
+          { status: 400 }
+        )
+      }
+      
+      // Fetch the user info
+      const apiResponse = await getUserInfo(identifier)
+      
+      if (!apiResponse || !apiResponse.data || !apiResponse.data.user) {
+        console.error('Failed to fetch TikTok user data for identifier:', identifier)
+        return NextResponse.json(
+          { success: false, error: 'Failed to fetch TikTok user data' },
+          { status: 500 }
+        )
+      }
+
+      // Store in Supabase
+      const userData = {
+        user_id: apiResponse.data.user.id,
+        username: apiResponse.data.user.uniqueId,
+        nickname: apiResponse.data.user.nickname,
+        followers: apiResponse.data.stats.followerCount,
+        following: apiResponse.data.stats.followingCount,
+        likes: apiResponse.data.stats.heart,
+        videos: apiResponse.data.stats.videoCount,
+        verified: apiResponse.data.user.verified,
+        bio: apiResponse.data.user.signature,
+        avatar: apiResponse.data.user.avatarLarger || apiResponse.data.user.avatarThumb,
     // First try to parse the URL for a username or ID
     const username = extractUsername(profileUrl)
     const userId = extractUserId(profileUrl)

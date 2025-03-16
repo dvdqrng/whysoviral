@@ -1,0 +1,86 @@
+# Docker Setup
+
+## Overview
+
+This project uses Docker for containerization and deployment. The Docker setup provides a consistent development environment and simplifies the deployment process, particularly for Supabase integration.
+
+## Docker CLI
+
+We have a CLI tool integrated with Docker that helps manage our containerized environment. This CLI should be used instead of manually creating test environments or running direct Docker commands.
+
+## Supabase Docker Container
+
+The project uses a Supabase Docker container for local development:
+- Container name: `supabase_db_whysoviral`
+- Default database: `postgres`
+
+## Key Docker Components
+
+- **Development Environment**: Docker containers for local development with hot-reloading
+- **Database**: PostgreSQL container with Supabase extensions
+- **API Services**: Containerized backend services
+- **Frontend**: Next.js application container
+
+## Common Commands
+
+```bash
+# Start the development environment
+./cli.sh dev up
+
+# Stop all containers
+./cli.sh dev down
+
+# View logs
+./cli.sh dev logs
+
+# Run database migrations
+./cli.sh db migrate
+
+# Reset the development database
+./cli.sh db reset
+
+# Execute SQL scripts against the Supabase container
+cat your-script.sql | docker exec -i supabase_db_whysoviral psql -U postgres -d postgres
+```
+
+## Database Management Scripts
+
+We have several SQL scripts for managing the database:
+- `fix-rls-policies.sql` - Fixes Row Level Security policies
+- `disable-rls-temp.sql` - Temporarily disables RLS for testing
+- `reset_supabase.sql` - Resets the Supabase database
+
+Use the helper scripts to run these:
+- `./run-fix-rls.sh` - Runs the RLS policy fixes
+- `./disable-rls-temp.sh` - Temporarily disables RLS
+
+## Container Structure
+
+- **app**: Next.js frontend application
+- **api**: Backend API services
+- **db**: PostgreSQL database with Supabase extensions (`supabase_db_whysoviral`)
+- **cache**: Redis cache for performance optimization
+
+## Important Notes
+
+- Always use the CLI commands instead of direct Docker commands to ensure consistent configuration
+- Database data is persisted in Docker volumes
+- Environment variables are loaded from `.env` files
+- The Docker setup includes development, testing, and production configurations
+- For Supabase operations, use the container name `supabase_db_whysoviral`
+
+## Troubleshooting
+
+If you encounter issues with the Docker setup:
+
+1. Check container logs: `./cli.sh dev logs`
+2. Restart the environment: `./cli.sh dev restart`
+3. Rebuild containers if dependencies change: `./cli.sh dev rebuild`
+4. Check Supabase container status: `docker ps | grep supabase_db_whysoviral`
+5. For database issues, you can connect directly: `docker exec -it supabase_db_whysoviral psql -U postgres -d postgres`
+
+## References
+
+- Docker documentation: [https://docs.docker.com/](https://docs.docker.com/)
+- Supabase documentation: [https://supabase.io/docs](https://supabase.io/docs)
+- Project-specific Docker documentation in `/docs/docker.md` 

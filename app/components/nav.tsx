@@ -14,6 +14,10 @@ export function MainNav() {
       name: "Account Analysis",
       href: "/tier2",
     },
+    {
+      name: "Teams",
+      href: "/teams",
+    },
   ]
 
   return (
