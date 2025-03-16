@@ -64,7 +64,7 @@ export async function analyzeVideo(url: string): Promise<VideoAnalysis> {
     return analysis
   } catch (error) {
     console.error("Error in video analysis:", error)
-    throw new Error(`Failed to analyze video: ${error.message}`)
+    throw new Error(`Failed to analyze video: ${error instanceof Error ? error.message : String(error)}`)
   }
 }
 
