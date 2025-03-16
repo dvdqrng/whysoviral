@@ -301,7 +301,9 @@ export async function acceptTeamInvitation(token: string, userId: string): Promi
   }
 
   try {
-    await addTeamMember(invitation.team_id, userId, invitation.role)
+    // Ensure role is either 'admin' or 'member', not 'owner'
+    const memberRole = invitation.role === 'owner' ? 'admin' : invitation.role
+    await addTeamMember(invitation.team_id, userId, memberRole)
   } catch (error) {
     console.error('Error adding user to team after accepting invitation:', error)
     throw error
