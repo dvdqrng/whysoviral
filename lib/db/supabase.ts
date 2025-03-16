@@ -47,16 +47,15 @@ interface DatabaseError extends Error {
   code?: string
 }
 
-const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!
-const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
+// Use environment variables with fallback to local development values
+const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || 'http://localhost:54322'
+const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZS1kZW1vIiwicm9sZSI6ImFub24iLCJleHAiOjE5ODM4MTI5OTZ9.CRXP1A7WOeoJeXxjNni43kdQwgnWNReilDMblYTn_I0'
 
-if (!supabaseUrl || !supabaseKey) {
-  console.error('Missing Supabase environment variables')
-  throw new Error('Missing Supabase environment variables')
-}
+console.log('Initializing DB Supabase client with URL:', supabaseUrl)
+export const dbSupabase = createClient(supabaseUrl, supabaseKey)
 
-console.log('Initializing Supabase client with URL:', supabaseUrl)
-export const supabase = createClient(supabaseUrl, supabaseKey)
+// For backwards compatibility
+export const supabase = dbSupabase
 
 // Test the connection
 async function testConnection() {
