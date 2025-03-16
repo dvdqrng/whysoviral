@@ -124,7 +124,7 @@ export default function Login() {
       router.refresh()
     } catch (error) {
       console.error("Login error:", error)
-      setError(error.message || "An error occurred during login")
+      setError(error instanceof Error ? error.message : "An error occurred during login")
     } finally {
       setLoading(false)
     }
