@@ -36,7 +36,9 @@ export default function TeamsPageDirect() {
         if (data.session) {
           setUser(data.session.user)
           // Store the email in localStorage for other pages
-          localStorage.setItem('email', data.session.user.email)
+          if (data.session.user.email) {
+            localStorage.setItem('email', data.session.user.email)
+          }
         } else {
           setUser(null)
         }
