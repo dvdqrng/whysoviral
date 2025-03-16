@@ -159,7 +159,7 @@ export default function TeamPageDirect({ params }: { params: { team_id: string }
         return false
       }
 
-      setInvitations(invitationsData || [])
+      setInvitations(invitationsData as unknown as TeamInvitation[] || [])
       return true
     } catch (err) {
       console.error('Error in fetchInvitations:', err)
