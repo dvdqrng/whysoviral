@@ -50,14 +50,16 @@ export async function POST(req: Request) {
       )
     }
 
-    // Test the API connection with a simple request
-    const response = await fetch("https://tiktok-api23.p.rapidapi.com/v1/post/detail", {
+    // Make the API request
+    const apiUrl = new URL("https://tiktok-api23.p.rapidapi.com/v1/video/info")
+    apiUrl.searchParams.append("url", url)
+    
+    const response = await fetch(apiUrl, {
       method: "GET",
       headers: {
-        "X-RapidAPI-Key": rapidApiKey,
+        "X-RapidAPI-Key": process.env.RAPID_API_KEY || "",
         "X-RapidAPI-Host": "tiktok-api23.p.rapidapi.com",
       },
-      params: { url },
     })
 
     if (!response.ok) {
