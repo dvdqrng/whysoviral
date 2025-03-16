@@ -194,7 +194,7 @@ export default function AuthTestPage() {
                     const data = await res.json();
                     alert(`Teams API response status: ${res.status}\n\nData: ${JSON.stringify(data, null, 2)}`);
                   } catch (err) {
-                    alert(`Error: ${err.message}`);
+                    alert(`Error: ${err instanceof Error ? err.message : String(err)}`);
                   }
                 }}
                 className="mr-2"
