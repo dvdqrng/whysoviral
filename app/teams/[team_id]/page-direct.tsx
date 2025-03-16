@@ -373,7 +373,9 @@ export default function TeamPageDirect({ params }: { params: { team_id: string }
       }
 
       // Update local state
-      setTeam({ ...team, name, description: description || null })
+      if (team) {
+        setTeam({ ...team, name, description: description || null })
+      }
       alert('Team updated successfully!')
 
       return true
