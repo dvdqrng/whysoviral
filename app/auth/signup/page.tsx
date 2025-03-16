@@ -51,7 +51,7 @@ export default function Signup() {
       router.refresh()
     } catch (error) {
       console.error('Caught error during signup:', error)
-      setError(error.message || "An error occurred during signup.")
+      setError(error instanceof Error ? error.message : "An error occurred during signup.")
     } finally {
       setLoading(false)
     }
