@@ -22,7 +22,7 @@ export async function POST(req: Request) {
     return NextResponse.json(
       {
         error: "Failed to fetch TikTok data",
-        details: error.message,
+        details: error instanceof Error ? error.message : String(error),
         suggestion: "Consider using TikTok's official API for business accounts to access detailed metrics.",
       },
       { status: 500 },
