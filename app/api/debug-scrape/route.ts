@@ -38,7 +38,7 @@ export async function POST(req: Request) {
 
     return NextResponse.json(debugInfo)
   } catch (error) {
-    debugInfo.error = error.message
+    debugInfo.error = error instanceof Error ? error.message : String(error)
     return NextResponse.json(debugInfo, { status: 500 })
   }
 }
