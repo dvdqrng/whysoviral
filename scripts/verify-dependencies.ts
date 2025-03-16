@@ -9,7 +9,7 @@ async function verifyDependencies() {
     const response = await axios.get("https://example.com")
     console.log("Axios is working correctly. Status:", response.status)
   } catch (error) {
-    console.error("Error with axios:", error.message)
+    console.error("Error with axios:", error instanceof Error ? error.message : String(error))
   }
 
   // Verify cheerio
@@ -19,7 +19,7 @@ async function verifyDependencies() {
     const text = $("h1").text()
     console.log("Cheerio is working correctly. Parsed text:", text)
   } catch (error) {
-    console.error("Error with cheerio:", error.message)
+    console.error("Error with cheerio:", error instanceof Error ? error.message : String(error))
   }
 }
 
