@@ -8,7 +8,7 @@ function isValidTikTokUrl(url: string): boolean {
     const parsed = new URL(url)
     return (
       parsed.hostname.includes("tiktok.com") &&
-      (url.includes("/video/") || url.includes("/v/") || parsed.pathname.match(/[@/]/g)?.length >= 2)
+      (url.includes("/video/") || url.includes("/v/") || (parsed.pathname.match(/[@/]/g)?.length ?? 0) >= 2)
     )
   } catch {
     return false
