@@ -80,7 +80,8 @@ export default function Login() {
 
       if (sessionData.session) {
         console.log("Session user ID:", sessionData.session.user.id)
-        console.log("Session expires at:", new Date(sessionData.session.expires_at * 1000).toISOString())
+        console.log("Session expires at:", sessionData.session.expires_at ?
+          new Date(sessionData.session.expires_at * 1000).toISOString() : 'unknown')
 
         // Sync session with server
         try {
