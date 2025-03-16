@@ -102,17 +102,17 @@ export function useTeams() {
       const data = await response.json();
       setTeams(data.teams || []);
     } catch (error) {
-      console.error('Error fetching teams:', error.message);
+      console.error('Error fetching teams:', error instanceof Error ? error.message : error);
       
       // Check for specific authentication-related error messages
-      if (error.message?.includes('auth') || 
-          error.message?.includes('login') || 
-          error.message?.includes('Unauthorized') || 
-          error.message?.includes('401')) {
+      if (error instanceof Error && error.message?.includes('auth') || 
+          error instanceof Error && error.message?.includes('login') || 
+          error instanceof Error && error.message?.includes('Unauthorized') || 
+          error instanceof Error && error.message?.includes('401')) {
         setNeedsLogin(true);
         setError('Authentication required. Please log in to access teams.');
       } else {
-        setError(error.message || 'An error occurred while fetching teams');
+        setError(error instanceof Error ? error.message : 'An error occurred while fetching teams');
       }
     } finally {
       setLoading(false);
