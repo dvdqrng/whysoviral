@@ -126,7 +126,7 @@ export default function TeamPageDirect({ params }: { params: { team_id: string }
             email: (member.users as any)?.email || 'Unknown email'
           }))
           console.log('Transformed members:', transformedMembers)
-          setMembers(transformedMembers || [])
+          setMembers(transformedMembers as unknown as TeamMember[] || [])
         }
 
         // Fetch invitations
