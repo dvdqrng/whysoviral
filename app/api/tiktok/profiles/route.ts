@@ -1,40 +1,179 @@
 import { NextResponse } from "next/server"
-import { supabase } from "@/lib/db/supabase"
+import { createClient } from '@supabase/supabase-js'
+import { getProfileAnalytics } from '@/lib/analytics-service'
 
 export const dynamic = "force-dynamic"
 
-export async function GET() {
+export async function GET(request: Request) {
   try {
-    // Fetch all users from the tiktok_users table
-    const { data: users, error: usersError } = await supabase
-      .from('tiktok_users')
+    // Get user ID from query parameter
+    const url = new URL(request.url)
+    const userId = url.searchParams.get('userId')
+    const timeframe = parseInt(url.searchParams.get('timeframe') || '1', 10) // Default to 1 month if not specified
+
+    console.log('Requested user ID:', userId)
+    console.log('Requested timeframe:', timeframe, 'months')
+
+    // Create a Supabase client with service role key to bypass RLS
+    const supabaseAdmin = createClient(
+      process.env.NEXT_PUBLIC_SUPABASE_URL!,
+      process.env.SUPABASE_SERVICE_ROLE_KEY!
+    )
+
+    // If no user ID is specified, try to get the authenticated user
+    let authUserId = userId
+    if (!authUserId) {
+      const { data: { session } } = await supabaseAdmin.auth.getSession()
+      authUserId = session?.user?.id
+      console.log('Detected auth user ID:', authUserId)
+    }
+
+    // If still no user ID, return empty profiles
+    if (!authUserId) {
+      console.log('No user ID found, returning empty profiles')
+      return NextResponse.json({
+        success: true,
+        data: [],
+        timestamp: new Date().toISOString()
+      })
+    }
+
+    // Query accounts directly using the admin client that bypasses RLS
+    const { data: users, error: usersError } = await supabaseAdmin
+      .from('tiktok_accounts')
       .select('*')
+      .eq('auth_user_id', authUserId)
       .order('last_updated', { ascending: false })
 
     if (usersError) {
+      console.error("Error fetching TikTok accounts:", usersError)
       throw usersError
     }
 
-    // For each user, fetch their posts
+    // If there are no users, return an empty array
+    if (!users || users.length === 0) {
+      console.log('No TikTok accounts found for user ID:', authUserId)
+      return NextResponse.json({
+        success: true,
+        data: [],
+        timestamp: new Date().toISOString()
+      })
+    }
+
+    console.log(`Found ${users.length} TikTok accounts for user ID: ${authUserId}`)
+
+    // Calculate the cutoff date based on the timeframe
+    const cutoffDate = new Date()
+    cutoffDate.setMonth(cutoffDate.getMonth() - timeframe)
+    const cutoffDateStr = cutoffDate.toISOString()
+
+    console.log(`Filtering posts from after ${cutoffDateStr} (${timeframe} months ago)`)
+
+    // For each user, fetch their posts and analytics using the unified analytics service
     const profiles = await Promise.all(
       users.map(async (user) => {
-        const { data: posts, error: postsError } = await supabase
-          .from('tiktok_posts')
-          .select('*')
-          .eq('username', user.username)
-          .order('created_at', { ascending: false })
+        // Fetch posts within the timeframe with pagination to get more posts
+        let allPosts: any[] = [];
+        let hasMore = true;
+        let page = 0;
+        const pageSize = 100; // Fetch 100 posts at a time
 
-        if (postsError) {
-          console.error(`Error fetching posts for ${user.username}:`, postsError)
-          return null
+        while (hasMore) {
+          const { data: posts, error: postsError } = await supabaseAdmin
+            .from('tiktok_posts')
+            .select('*')
+            .eq('username', user.username)
+            .gte('created_at', cutoffDateStr) // Only posts from cutoff date onwards
+            .order('created_at', { ascending: false })
+            .range(page * pageSize, (page + 1) * pageSize - 1);
+
+          if (postsError) {
+            console.error(`Error fetching posts for ${user.username}:`, postsError);
+            hasMore = false;
+          } else if (!posts || posts.length === 0) {
+            hasMore = false;
+          } else {
+            allPosts = [...allPosts, ...posts];
+
+            // If we got fewer posts than the page size, we've reached the end
+            if (posts.length < pageSize) {
+              hasMore = false;
+            } else {
+              page++;
+            }
+          }
         }
+
+        console.log(`Fetched ${allPosts.length} posts for ${user.username} within ${timeframe} month timeframe`);
+
+        // Get user data with bio information from user_profiles or any other table that contains it
+        let userData = user;
+        try {
+          // First check if the tiktok_accounts table already has the bio data
+          if (user.signature || user.bio || user.bioLink) {
+            console.log(`Using existing bio data for ${user.username} from tiktok_accounts table`);
+            userData = user;
+          } else {
+            // Try to find bio data in user_profiles table if it exists
+            try {
+              const { data: userProfile, error } = await supabaseAdmin
+                .from('user_profiles')
+                .select('*')
+                .eq('username', user.username)
+                .single();
+
+              if (!error && userProfile) {
+                console.log(`Found user profile data for ${user.username}`);
+                userData = { ...user, ...userProfile };
+              }
+            } catch (profileError) {
+              console.log(`Error with user_profiles table:`, profileError);
+
+              // If user_profiles table doesn't exist, check if bio data is in the tiktok_user_data table
+              try {
+                const { data: tiktokUserData, error } = await supabaseAdmin
+                  .from('tiktok_user_data')
+                  .select('*')
+                  .eq('username', user.username)
+                  .single();
+
+                if (!error && tiktokUserData) {
+                  console.log(`Found user data in tiktok_user_data for ${user.username}`);
+                  userData = { ...user, ...tiktokUserData };
+                }
+              } catch (tiktokDataError) {
+                console.log(`Error with tiktok_user_data table:`, tiktokDataError);
+              }
+            }
+          }
+        } catch (userDataError) {
+          console.error(`Error getting user data for ${user.username}:`, userDataError);
+        }
+
+        // Use the analytics service to get standardized analytics
+        const analytics = await getProfileAnalytics(user.username, timeframe);
 
         return {
-          user,
-          posts: posts || []
-        }
+          user: userData,
+          posts: allPosts || [],
+          analytics: analytics || {
+            avgViewsPerPost: 0,
+            avgTimeBetweenPosts: 0,
+            avgEngagementRate: 0,
+            weeklyPostFrequency: [],
+            viewsTrend: [],
+            postFrequency: { weekly: 0, monthly: 0 },
+            topHashtags: [],
+            totalLikes: 0,
+            totalComments: 0,
+            totalShares: 0,
+            totalViews: 0,
+            lastCalculated: new Date().toISOString(),
+            calculated: true
+          }
+        };
       })
-    )
+    );
 
     // Filter out any null results from failed fetches
     const validProfiles = profiles.filter(profile => profile !== null)

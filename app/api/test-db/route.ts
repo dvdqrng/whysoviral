@@ -5,7 +5,7 @@ export const runtime = 'nodejs'
 
 export async function GET() {
   try {
-    const { data, error } = await supabase.from('tiktok_users').select('count')
+    const { data, error } = await supabase.from('tiktok_accounts').select('count')
 
     if (error) {
       console.error('Database error:', error)

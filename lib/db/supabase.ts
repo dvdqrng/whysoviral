@@ -1,48 +1,7 @@
 import { createClient } from '@supabase/supabase-js'
+import { TikTokAccount, TikTokPost, RefreshStatus } from './models'
 
 // TypeScript interfaces for our database models
-interface TikTokUser {
-  user_id: string
-  username: string
-  nickname: string | null
-  followers: number
-  following: number
-  likes: number
-  videos: number
-  verified: boolean
-  bio: string | null
-  avatar: string | null
-  profile_url: string | null
-  last_updated: string
-}
-
-interface TikTokPost {
-  id: string
-  username: string
-  description: string | null
-  created_at: string
-  plays: number
-  likes: number
-  shares: number
-  comments: number
-  bookmarks: number
-  video_duration: number
-  video_ratio: string | null
-  video_cover_url: string
-  video_play_url: string
-  music_title: string | null
-  music_author: string | null
-  music_is_original: boolean
-  music_duration: number | null
-  music_play_url: string | null
-  is_pinned: boolean
-  is_ad: boolean
-  region: string | null
-  hashtags: string[]
-  mentions: string[]
-  last_updated: string
-}
-
 interface DatabaseError extends Error {
   code?: string
 }
@@ -62,31 +21,29 @@ export const supabase = createClient(supabaseUrl, supabaseKey)
 async function testConnection() {
   try {
     const { error } = await supabase
-      .from('tiktok_users')
+      .from('tiktok_accounts')
       .select('count')
       .limit(1)
 
     if (error) {
       console.error('Supabase connection test failed:', error)
-      return false
+    } else {
+      console.log('Supabase connection test successful')
     }
-
-    console.log('Supabase connection test successful')
-    return true
   } catch (error) {
-    console.error('Supabase connection test error:', error)
-    return false
+    console.error('Error during Supabase connection test:', error)
   }
 }
 
 // Run the test when the module loads
 testConnection()
 
-export async function upsertTikTokUser(userData: Partial<TikTokUser>, searchedByUid?: string): Promise<TikTokUser | null> {
+export async function upsertTikTokUser(userData: Partial<TikTokAccount>, searchedByUid?: string, authUserId?: string): Promise<TikTokAccount | null> {
   try {
     console.log('=== Upserting TikTok User ===')
     console.log('Raw user data:', JSON.stringify(userData, null, 2))
     console.log('Searched by UID:', searchedByUid)
+    console.log('Auth User ID:', authUserId)
 
     // Validate required fields
     if (!userData.user_id || !userData.username) {
@@ -106,7 +63,7 @@ export async function upsertTikTokUser(userData: Partial<TikTokUser>, searchedBy
     console.log('Transformed user data:', JSON.stringify(transformedData, null, 2))
 
     const { data, error } = await supabase
-      .from('tiktok_users')
+      .from('tiktok_accounts')
       .upsert({
         user_id: transformedData.user_id,
         username: transformedData.username,
@@ -119,7 +76,9 @@ export async function upsertTikTokUser(userData: Partial<TikTokUser>, searchedBy
         bio: transformedData.bio,
         avatar: transformedData.avatar,
         profile_url: transformedData.profile_url,
-        last_updated: new Date().toISOString()
+        last_updated: new Date().toISOString(),
+        // Include the authenticated user's ID if provided
+        ...(authUserId && { auth_user_id: authUserId })
       })
       .select()
       .single()
@@ -129,10 +88,8 @@ export async function upsertTikTokUser(userData: Partial<TikTokUser>, searchedBy
       throw error
     }
 
-    // If we have a searchedByUid, track the search in the tiktok_user_searches table
-    if (searchedByUid && typeof searchedByUid === 'string' && data) {
-      await trackUserSearch(data.user_id, searchedByUid)
-    }
+    // The tiktok_user_searches table no longer exists, so we've removed the tracking code
+    // that was previously here
 
     console.log('Successfully upserted user:', JSON.stringify(data, null, 2))
     return data
@@ -223,13 +180,13 @@ export async function upsertTikTokPosts(posts: any[], username: string): Promise
   }
 }
 
-export async function getTikTokUserFromDB(identifier: string, by: 'username' | 'user_id' = 'username'): Promise<TikTokUser | null> {
+export async function getTikTokUserFromDB(identifier: string, by: 'username' | 'user_id' = 'username'): Promise<TikTokAccount | null> {
   try {
     console.log(`=== Fetching TikTok User by ${by} ===`)
     console.log('Identifier:', identifier)
 
     const { data, error } = await supabase
-      .from('tiktok_users')
+      .from('tiktok_accounts')
       .select('*')
       .eq(by, identifier)
       .single()
@@ -297,53 +254,314 @@ export async function shouldRefreshData(identifier: string, by: 'username' | 'us
   return hoursSinceLastUpdate > refreshThresholdHours
 }
 
-export async function trackUserSearch(userId: string, searchedByUid: string) {
-  try {
-    console.log('=== Tracking User Search ===')
-    console.log('User ID:', userId)
-    console.log('Searched by UID:', searchedByUid)
+// Note: The trackUserSearch function has been removed as the tiktok_user_searches table
+// no longer exists in the database 
 
-    const { error } = await supabase
-      .from('tiktok_user_searches')
-      .insert({
-        user_id: userId,
-        searched_by_uid: searchedByUid
-      })
+// In-memory fallback for refresh time if database fails
+// NOTE: This variable is not synchronized across server instances
+// and should only be used as a last resort fallback
+let inMemoryLastRefreshTime: string | null = null;
+
+// Get the last time data was refreshed
+export async function getLastRefreshTime(): Promise<string | null> {
+  try {
+    // First, check if the app_status table exists
+    const createTable = await supabase
+      .from('app_status')
+      .select('id')
+      .limit(1);
+
+    // If the table doesn't exist or has an error, try to create it
+    if (createTable.error && createTable.error.code === '42P01') { // Table doesn't exist
+      console.log('app_status table does not exist, attempting to create it');
+
+      // Try to create the table with direct SQL
+      const { error: createError } = await supabase.rpc('create_app_status_table');
+
+      // If the RPC fails, try direct SQL
+      if (createError) {
+        console.log('Failed to create app_status table via RPC, trying direct SQL');
+        const { error: sqlError } = await supabase.rpc('setup_refresh_tracking');
+
+        // If both fail, use in-memory fallback
+        if (sqlError) {
+          console.log('Failed to create app_status table via SQL, using in-memory fallback');
+          return inMemoryLastRefreshTime;
+        }
+      }
+    }
+
+    // At this point the table should exist, so try to get the data
+    const { data, error } = await supabase
+      .from('app_status')
+      .select('last_refresh_time')
+      .eq('id', 1)
+      .single();
 
     if (error) {
-      // Check for "relation does not exist" error
-      if (error.code === '42P01') {
-        console.error('Error: The tiktok_user_searches table does not exist. Please ensure all migrations have been run.')
-        // You may want to disable tracking silently in this case
-        return
-      }
-
-      // Check for foreign key violation
-      if (error.code === '23503') {
-        console.error('Error: Referenced user_id does not exist in tiktok_users table')
-        return
-      }
-
-      console.error('Error tracking user search:', {
-        message: error.message,
-        code: error.code,
-        details: error.details
-      })
-      throw error
+      console.error('Error fetching last refresh time:', error);
+      // Return in-memory value as fallback
+      return inMemoryLastRefreshTime;
     }
 
-    console.log('Successfully tracked user search')
+    // Update in-memory cache if successful
+    if (data) {
+      inMemoryLastRefreshTime = data.last_refresh_time;
+    }
+
+    return data?.last_refresh_time || inMemoryLastRefreshTime;
   } catch (error) {
-    if (error instanceof Error) {
-      console.error('Error tracking user search:', {
-        name: error.name,
-        message: error.message,
-        stack: error.stack
-      })
-    } else {
-      console.error('Unknown error tracking user search:', error)
-    }
-    // Don't throw the error since this is a non-critical tracking function
-    // Just log it and continue
+    console.error('Error getting last refresh time:', error);
+    return inMemoryLastRefreshTime; // Return in-memory value as fallback
   }
-} 
+}
+
+// Update the refresh time to now
+// Only updates if dataChanged is true to prevent marking as refreshed when no actual data changed
+export async function updateRefreshTime(dataChanged: boolean = false): Promise<boolean> {
+  // Skip updating refresh time if no data was actually changed
+  if (!dataChanged) {
+    console.log('No data changed, skipping refresh time update');
+    return false;
+  }
+
+  try {
+    const now = new Date().toISOString();
+
+    // Always update the in-memory cache
+    inMemoryLastRefreshTime = now;
+
+    // Try to check if table exists
+    const checkTable = await supabase
+      .from('app_status')
+      .select('id')
+      .limit(1);
+
+    // If table doesn't exist, try to create it
+    if (checkTable.error && checkTable.error.code === '42P01') {
+      console.log('app_status table does not exist, attempting to create it');
+
+      // Try to create the table with direct SQL
+      const { error: createError } = await supabase.rpc('create_app_status_table');
+
+      // If the RPC fails, try direct SQL
+      if (createError) {
+        console.log('Failed to create app_status table via RPC, trying direct SQL');
+        const { error: sqlError } = await supabase.rpc('setup_refresh_tracking');
+
+        // If both fail, use in-memory fallback
+        if (sqlError) {
+          console.log('Failed to create app_status table via SQL, using in-memory fallback');
+          return false;
+        }
+      }
+    }
+
+    // If we got here, the table should exist or was created, so update the record
+    const { error } = await supabase
+      .from('app_status')
+      .upsert({
+        id: 1,
+        last_refresh_time: now,
+        updated_at: now
+      }, {
+        onConflict: 'id'
+      });
+
+    if (error) {
+      console.error('Error updating refresh time:', error);
+      console.log('Using in-memory fallback for refresh time');
+      return false;
+    }
+
+    console.log('Successfully updated refresh time in database');
+    return true;
+  } catch (error) {
+    console.error('Error updating refresh time:', error);
+    console.log('Using in-memory fallback for refresh time');
+    return false;
+  }
+}
+
+// Refresh all TikTok accounts data
+export async function refreshAllAccounts(): Promise<{
+  success: boolean,
+  refreshedCount: number,
+  rateLimited?: boolean,
+  dataChanged: boolean // Track if actual data was updated
+}> {
+  try {
+    // Get all accounts
+    const { data: accounts, error } = await supabase
+      .from('tiktok_accounts')
+      .select('user_id, username');
+
+    if (error) {
+      console.error('Error fetching accounts for refresh:', error);
+      return { success: false, refreshedCount: 0, dataChanged: false };
+    }
+
+    console.log(`Found ${accounts.length} accounts to refresh`);
+
+    // Rather than calling the TikTok API directly which might have rate limits,
+    // we'll recalculate analytics from the data we already have
+    let totalUpdated = 0;
+    let anyDataChanged = false;
+
+    for (const account of accounts) {
+      try {
+        // Get all posts for this account
+        const { data: posts, error: postsError } = await supabase
+          .from('tiktok_posts')
+          .select('*')
+          .eq('username', account.username);
+
+        if (postsError) {
+          console.error(`Error fetching posts for ${account.username}:`, postsError);
+          continue;
+        }
+
+        if (!posts || posts.length === 0) {
+          console.log(`No posts found for ${account.username}, skipping analytics calculation`);
+          continue;
+        }
+
+        // Calculate analytics
+        const analytics = calculateAnalyticsFromPosts(posts, account.username);
+
+        // Store analytics in the database
+        try {
+          const { data: existingAnalytics } = await supabase
+            .from('tiktok_analytics')
+            .select('id')
+            .eq('username', account.username)
+            .single();
+
+          if (existingAnalytics) {
+            // Update existing analytics
+            const { error: updateError } = await supabase
+              .from('tiktok_analytics')
+              .update(analytics)
+              .eq('username', account.username);
+
+            if (updateError) {
+              console.error(`Error updating analytics for ${account.username}:`, updateError);
+            } else {
+              totalUpdated++;
+              anyDataChanged = true;
+            }
+          } else {
+            // Insert new analytics
+            const { error: insertError } = await supabase
+              .from('tiktok_analytics')
+              .insert({ ...analytics, username: account.username });
+
+            if (insertError) {
+              console.error(`Error inserting analytics for ${account.username}:`, insertError);
+            } else {
+              totalUpdated++;
+              anyDataChanged = true;
+            }
+          }
+        } catch (analyticsError) {
+          console.error(`Error handling analytics for ${account.username}:`, analyticsError);
+        }
+
+        console.log(`Processed analytics for ${account.username}`);
+      } catch (accountError) {
+        console.error(`Error processing account ${account.username}:`, accountError);
+      }
+    }
+
+    // Update the refresh time
+    await updateRefreshTime(anyDataChanged);
+
+    return {
+      success: true,
+      refreshedCount: totalUpdated,
+      dataChanged: anyDataChanged
+    };
+  } catch (error) {
+    console.error('Error in refreshAllAccounts:', error);
+    return {
+      success: false,
+      refreshedCount: 0,
+      dataChanged: false
+    };
+  }
+}
+
+// Helper function to calculate analytics from posts
+function calculateAnalyticsFromPosts(posts: any[], username: string) {
+  // Base analytics object
+  const analytics = {
+    username,
+    total_posts: posts.length,
+    total_likes: 0,
+    total_comments: 0,
+    total_shares: 0,
+    total_views: 0,
+    avg_likes_per_post: 0,
+    avg_comments_per_post: 0,
+    avg_shares_per_post: 0,
+    avg_views_per_post: 0,
+    avg_engagement_rate: 0,
+    weekly_post_frequency: [],
+    post_frequency: { weekly: 0, monthly: 0 },
+    last_calculated: new Date().toISOString()
+  };
+
+  // Calculate total metrics
+  posts.forEach(post => {
+    analytics.total_likes += post.likes || 0;
+    analytics.total_comments += post.comments || 0;
+    analytics.total_shares += post.shares || 0;
+    analytics.total_views += post.plays || 0;
+  });
+
+  // Calculate averages
+  if (posts.length > 0) {
+    analytics.avg_likes_per_post = analytics.total_likes / posts.length;
+    analytics.avg_comments_per_post = analytics.total_comments / posts.length;
+    analytics.avg_shares_per_post = analytics.total_shares / posts.length;
+    analytics.avg_views_per_post = analytics.total_views / posts.length;
+
+    // Calculate engagement rate
+    if (analytics.total_views > 0) {
+      const totalEngagements = analytics.total_likes + analytics.total_comments + analytics.total_shares;
+      analytics.avg_engagement_rate = (totalEngagements / analytics.total_views) * 100;
+    }
+  }
+
+  // Calculate post frequency
+  try {
+    const validDates = posts
+      .map(post => {
+        try {
+          const date = new Date(post.created_at);
+          return !isNaN(date.getTime()) ? date : null;
+        } catch (e) {
+          return null;
+        }
+      })
+      .filter(Boolean);
+
+    if (validDates.length > 1) {
+      // Sort dates from oldest to newest
+      validDates.sort((a, b) => a.getTime() - b.getTime());
+
+      const firstPost = validDates[0];
+      const lastPost = validDates[validDates.length - 1];
+      const totalDays = (lastPost.getTime() - firstPost.getTime()) / (1000 * 60 * 60 * 24);
+
+      if (totalDays > 0) {
+        analytics.post_frequency.weekly = (validDates.length / totalDays) * 7;
+        analytics.post_frequency.monthly = (validDates.length / totalDays) * 30;
+      }
+    }
+  } catch (dateError) {
+    console.error(`Error calculating post frequency for ${username}:`, dateError);
+  }
+
+  return analytics;
+}
