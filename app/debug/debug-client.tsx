@@ -1,12 +1,13 @@
 'use client'
 
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
-import { Input } from "@/components/ui/input"
-import { Button } from "@/components/ui/button"
-import { Label } from "@/components/ui/label"
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import { Alert, AlertDescription } from "@/components/ui/alert"
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "../components/ui/card"
+import { Input } from "../components/ui/input"
+import { Button } from "../components/ui/button"
+import { Label } from "../components/ui/label"
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "../components/ui/tabs"
+import { Alert, AlertDescription } from "../components/ui/alert"
 import { useState } from "react"
+import { apiService } from "../lib/api-service"
 
 export default function DebugClient() {
   const [profileResponse, setProfileResponse] = useState<string>("No data yet")
@@ -23,18 +24,7 @@ export default function DebugClient() {
 
     setIsLoadingProfile(true)
     try {
-      const response = await fetch('/api/tiktok/user', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ profileUrl }),
-      })
-
-      const data = await response.json()
-      if (!response.ok) {
-        throw new Error(data.error || 'Failed to fetch user data')
-      }
+      const data = await apiService.getTikTokUserInfo(profileUrl)
       setProfileResponse(JSON.stringify(data, null, 2))
     } catch (error) {
       setError(error instanceof Error ? error.message : 'Failed to fetch user data')

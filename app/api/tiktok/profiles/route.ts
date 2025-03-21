@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server"
 import { createClient } from '@supabase/supabase-js'
-import { getProfileAnalytics } from '@/lib/analytics-service'
+import { getProfileAnalytics, getSampleProfile, getSamplePosts, sampleProfiles } from "../../../lib/analytics-service"
 
 export const dynamic = "force-dynamic"
 
@@ -10,9 +10,20 @@ export async function GET(request: Request) {
     const url = new URL(request.url)
     const userId = url.searchParams.get('userId')
     const timeframe = parseInt(url.searchParams.get('timeframe') || '1', 10) // Default to 1 month if not specified
+    const useSampleData = url.searchParams.get('useSampleData') === 'true' || process.env.USE_SAMPLE_DATA === 'true'
 
     console.log('Requested user ID:', userId)
     console.log('Requested timeframe:', timeframe, 'months')
+
+    // If useSampleData is true, return sample data immediately
+    if (useSampleData) {
+      console.log('Using sample data as requested')
+      return NextResponse.json({
+        success: true,
+        data: sampleProfiles,
+        timestamp: new Date().toISOString()
+      })
+    }
 
     // Create a Supabase client with service role key to bypass RLS
     const supabaseAdmin = createClient(
@@ -82,13 +93,13 @@ export async function GET(request: Request) {
           const { data: posts, error: postsError } = await supabaseAdmin
             .from('tiktok_posts')
             .select('*')
-            .eq('username', user.username)
+            .eq('tiktok_uid', user.tiktok_uid)
             .gte('created_at', cutoffDateStr) // Only posts from cutoff date onwards
             .order('created_at', { ascending: false })
             .range(page * pageSize, (page + 1) * pageSize - 1);
 
           if (postsError) {
-            console.error(`Error fetching posts for ${user.username}:`, postsError);
+            console.error(`Error fetching posts for account with ID ${user.tiktok_uid}:`, postsError);
             hasMore = false;
           } else if (!posts || posts.length === 0) {
             hasMore = false;
@@ -104,7 +115,7 @@ export async function GET(request: Request) {
           }
         }
 
-        console.log(`Fetched ${allPosts.length} posts for ${user.username} within ${timeframe} month timeframe`);
+        console.log(`Fetched ${allPosts.length} posts for account with ID ${user.tiktok_uid} within ${timeframe} month timeframe`);
 
         // Get user data with bio information from user_profiles or any other table that contains it
         let userData = user;
@@ -151,11 +162,17 @@ export async function GET(request: Request) {
         }
 
         // Use the analytics service to get standardized analytics
-        const analytics = await getProfileAnalytics(user.username, timeframe);
+        const analytics = await getProfileAnalytics(user.username, timeframe, user.auth_user_id, user.tiktok_uid);
+
+        // If there are no posts in the timeframe, use sample posts data but keep real user data
+        const postsToUse = allPosts.length > 0 ? allPosts : getSamplePosts(user.username, timeframe);
+        if (allPosts.length === 0) {
+          console.log(`No posts found for ${user.username}, using sample posts data`);
+        }
 
         return {
           user: userData,
-          posts: allPosts || [],
+          posts: postsToUse,
           analytics: analytics || {
             avgViewsPerPost: 0,
             avgTimeBetweenPosts: 0,

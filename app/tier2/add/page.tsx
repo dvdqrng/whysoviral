@@ -1,11 +1,12 @@
 "use client"
 
 import { useState } from 'react'
-import { Button } from "@/components/ui/button"
-import { Input } from "@/components/ui/input"
+import { Button } from "../../components/ui/button"
+import { Input } from "../../components/ui/input"
 import { ArrowLeft } from 'lucide-react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
+import { apiService } from "../../lib/api-service"
 
 export default function AddAccount() {
   const [profileUrl, setProfileUrl] = useState('')
@@ -25,20 +26,8 @@ export default function AddAccount() {
     setError('')
 
     try {
-      // Make a POST request to the TikTok user API endpoint
-      const response = await fetch('/api/tiktok/user', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ profileUrl }),
-      })
-
-      const data = await response.json()
-
-      if (!response.ok || !data.success) {
-        throw new Error(data.error || 'Failed to add TikTok account')
-      }
+      // Use the centralized API service to add the TikTok account
+      await apiService.addTikTokAccount(profileUrl)
 
       // If successful, redirect back to the tier2 page
       router.push('/tier2')
@@ -53,7 +42,7 @@ export default function AddAccount() {
   return (
     <div className="max-w-md mx-auto py-8">
       <Link href="/tier2" className="inline-flex items-center text-sm mb-6 hover:underline">
-        <ArrowLeft className="w-4 h-4 mr-1" /> Back to accounts
+        <ArrowLeft className="w-4 h-4 mr-1" /> Back to Accounts
       </Link>
 
       <h1 className="text-2xl font-bold mb-6">Add TikTok Account</h1>

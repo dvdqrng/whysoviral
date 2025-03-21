@@ -2,15 +2,15 @@
 
 import Link from "next/link"
 import { usePathname } from "next/navigation"
-import { cn } from "@/lib/utils"
-import { useAuth } from "@/lib/auth-context"
-import { Button } from "@/components/ui/button"
-import { supabase } from "@/lib/supabase"
+import { cn } from "../lib/utils"
+import { useAuth } from "../lib/auth-context"
+import { Button } from "./ui/button"
+import { supabase } from "../lib/supabase"
 import { useRouter } from "next/navigation"
-import { ThemeSwitcher } from "@/components/theme-switcher"
-import { Home, Users, FolderOpen, Video, Check, Globe } from "lucide-react"
-import { checkAndRefreshDataIfNeeded } from '@/lib/refresh-helper'
+import { ThemeSwitcher } from "./theme-switcher"
+import { Home, Users, Video, Globe, DatabaseZap } from "lucide-react"
 import { useState, useEffect } from 'react'
+import { RefreshButton } from "./refresh-button"
 
 type NavItem = {
   name: string;
@@ -24,7 +24,6 @@ export function Sidebar() {
   const pathname = usePathname()
   const { user, loading } = useAuth()
   const router = useRouter()
-  const [isRefreshing, setIsRefreshing] = useState(false)
   const [accountsCount, setAccountsCount] = useState(0)
 
   useEffect(() => {
@@ -47,27 +46,29 @@ export function Sidebar() {
 
   const navItems: NavItem[] = [
     {
-      name: "Home",
-      href: "/",
+      name: "Dashboard",
+      href: "/dashboard",
       icon: <Home className="w-4 h-4 mr-2" />,
-      disabled: true,
+    },
+    {
+      name: "Trending",
+      href: "/trending",
+      icon: <Globe className="w-4 h-4 mr-2" />,
     },
     {
       name: "Accounts",
       href: "/tier2",
       icon: <Users className="w-4 h-4 mr-2" />,
-      count: accountsCount,
     },
     {
-      name: "Groups",
-      href: "/tier2/groups",
-      icon: <FolderOpen className="w-4 h-4 mr-2" />,
-      disabled: true,
-    },
-    {
-      name: "Videos",
-      href: "/tier1",
+      name: "Video Analysis",
+      href: "/analyze",
       icon: <Video className="w-4 h-4 mr-2" />,
+    },
+    {
+      name: "API Usage",
+      href: "/api-usage",
+      icon: <DatabaseZap className="w-4 h-4 mr-2" />,
     },
   ]
 
@@ -75,36 +76,6 @@ export function Sidebar() {
     await supabase.auth.signOut()
     router.push("/")
     router.refresh()
-  }
-
-  const refreshData = async () => {
-    if (isRefreshing) return
-
-    setIsRefreshing(true)
-    try {
-      // Only make a direct POST request to refresh data when button is clicked
-      // Remove the call to checkAndRefreshDataIfNeeded() which causes automatic refreshes
-      const refreshResponse = await fetch('/api/tiktok/refresh-all', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' }
-      })
-
-      if (refreshResponse.ok) {
-        console.log('Manual refresh completed successfully')
-
-        // After refresh, update the accounts count
-        const response = await fetch('/api/tiktok/profiles')
-        const data = await response.json()
-
-        if (data.success && data.data) {
-          setAccountsCount(data.data.length)
-        }
-      }
-    } catch (error) {
-      console.error('Error during refresh:', error)
-    } finally {
-      setIsRefreshing(false)
-    }
   }
 
   return (
@@ -153,14 +124,9 @@ export function Sidebar() {
       </nav>
 
       <div className="flex flex-col space-y-3 mt-auto">
-        <button
-          onClick={refreshData}
-          className="flex items-center text-xs text-green-600 dark:text-green-400 py-2 px-3 rounded border border-transparent hover:border-green-200 dark:hover:border-green-800 transition-colors"
-          disabled={isRefreshing}
-        >
-          <Check className="h-4 w-4 mr-2" />
-          <span>{isRefreshing ? "Refreshing..." : "Updated 1 hour ago"}</span>
-        </button>
+        <div className="border rounded-md p-1.5">
+          <RefreshButton />
+        </div>
 
         {loading ? (
           <div className="flex items-center space-x-3 px-3 py-2 rounded-md">

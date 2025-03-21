@@ -1,12 +1,14 @@
 "use client"
 
-import { useEffect, useState } from 'react'
+import { useState } from 'react'
+import Image from "next/image"
+import { Container } from "./components/container"
 import Link from "next/link"
-import { Button } from "@/components/ui/button"
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
+import { Button } from "./components/ui/button"
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "./components/ui/card"
 import { ArrowRight, Video, Users, Clock, TrendingUp, CheckCircle } from "lucide-react"
 import { ColumnLayout, Column } from './components/column-layout'
-import { useAuth } from "@/lib/auth-context"
+import { useAuth } from "./lib/auth-context"
 
 export default function Home() {
   const { user, loading } = useAuth()
