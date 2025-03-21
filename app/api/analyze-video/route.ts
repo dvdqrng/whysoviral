@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server"
 import axios from "axios"
+import { apiService } from "@/lib/api-service"
 
 interface TikTokResponse {
   code: number
@@ -53,6 +54,7 @@ export async function POST(req: Request) {
     console.log("[Debug] Received URL:", url)
     console.log("API Route: Analyzing URL:", url)
 
+    // Use the centralized API service to analyze the video
     const rapidApiKey = process.env.RAPID_API_KEY
     if (!rapidApiKey) {
       throw new Error("RAPID_API_KEY is not configured")

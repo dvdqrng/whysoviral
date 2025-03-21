@@ -1,32 +1,35 @@
 import { NextResponse } from "next/server"
-import { getTikTokPostData } from "@/lib/tiktok-post-service"
+
+// Temporary function to replace the missing module
+const getTikTokPostData = async (postUrl: string) => {
+  return {
+    success: false,
+    message: "This functionality is currently unavailable"
+  }
+}
 
 export const runtime = "edge"
 export const dynamic = "force-dynamic"
 
-export async function POST(req: Request) {
+export async function GET(request: Request) {
+  const { searchParams } = new URL(request.url)
+  const postUrl = searchParams.get("url")
+
+  if (!postUrl) {
+    return NextResponse.json(
+      { error: "Missing post URL" },
+      { status: 400 }
+    )
+  }
+
   try {
-    const { url } = await req.json()
-
-    if (!url) {
-      return NextResponse.json({ error: "URL is required" }, { status: 400 })
-    }
-
-    const data = await getTikTokPostData(url)
-
-    return NextResponse.json({
-      success: true,
-      data,
-      timestamp: new Date().toISOString(),
-    })
+    const data = await getTikTokPostData(postUrl)
+    return NextResponse.json(data)
   } catch (error) {
     console.error("Error fetching TikTok post data:", error)
     return NextResponse.json(
-      {
-        success: false,
-        error: error instanceof Error ? error.message : "Failed to fetch TikTok post data",
-      },
-      { status: 500 },
+      { error: "Failed to fetch post data" },
+      { status: 500 }
     )
   }
 }
